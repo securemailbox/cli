@@ -8,7 +8,6 @@ from gpgopt import GpgOpt
 @click.pass_context
 def client(ctx, gnupghome, email):
     """
-    
     """
     ctx.obj['gpg'] = GpgOpt(mygnupghome=gnupghome, email=email)
 
@@ -39,13 +38,3 @@ client.add_command(send)
 
 if __name__=='__main__':
     client(obj={})
-
-"""
-my quick note:
-client is the hole client and initial gpg.
-have option: gnupg home dir, email.
-
-create key do not need options and the program auto run.
-
-list key have pvt key options.
-"""
