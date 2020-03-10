@@ -53,10 +53,7 @@ def choose_primary_key(ctx):
     pass
 
 
-@click.command()
-@click.option('--gnupghome', prompt='Enter your gnupg home dir:', default='gnupgkeys',
-              help='The home dir of gnupg key pairs.')
-@click.option('--email', prompt='Enter your email:', default=getlogin() + '@scmail.dev', help='The email of user.')
+# @click.command()
 @click.pass_context
 def set_user_info(ctx, gnupghome, email):
     """Set user information and return gnupghome and email."""
@@ -71,10 +68,20 @@ def set_user_info(ctx, gnupghome, email):
 
 
 @click.command()
-@click.option('--key-type', prompt='Enter key type:', default="RSA", help='The algorithms to generate the key. ex. RSA')
-@click.option('--key-length', prompt='Enter key length:', default=1024, help='The length of the key.')
-@click.option('--expire-date', prompt='Enter expire date:', default="2y", help='The expire time of the key pair.')
-@click.password_option('--password', prompt='Enter private key password:', help='Password of private key.')
+@click.option('--gnupghome', prompt='Enter your gnupg home dir', default='gnupgkeys',
+              help='The home dir of gnupg key pairs.')
+@click.option('--email', prompt='Enter your email', default=getlogin() + '@scmail.dev', help='The email of user.')
+@click.pass_context
+def update_user_info(ctx, gnupghome, email):
+    """Update gnupg home dir and personal email"""
+    pass
+
+
+@click.command()
+@click.option('--key-type', prompt='Enter key type', default="RSA", help='The algorithms to generate the key. ex. RSA')
+@click.option('--key-length', prompt='Enter key length', default=1024, help='The length of the key.')
+@click.option('--expire-date', prompt='Enter expire date', default="2y", help='The expire time of the key pair.')
+@click.password_option('--password', prompt='Enter private key password', help='Password of private key.')
 @click.pass_context
 def create_key(ctx, key_type, key_length, expire_date, password):
     """Create gnupg key pairs."""
@@ -82,8 +89,8 @@ def create_key(ctx, key_type, key_length, expire_date, password):
     ctx.obj['pp'].pprint({'email': ctx.obj['gpg'].email, 'key type': key_type, 'key length': key_length, 'expire date': expire_date})
     print('\n')
     key = ctx.obj['gpg'].create(password, key_type=key_type, key_length=key_length, expire_date=expire_date)
-    ctx.obj['pp'].pprint(key.__dict__)
-    ctx.obj['pp'].pprint(key.__doc__)
+    # ctx.obj['pp'].pprint(key.__dict__)
+    # ctx.obj['pp'].pprint(key.__doc__)
 
 
 @click.command()
@@ -95,18 +102,19 @@ def list_keys(ctx, show_private):
     keys = ctx.obj['gpg'].list_keys(show_private)
     key_type = 'public' if show_private is False else 'private'
     print('You have {} {} keys.'.format(len(keys), key_type))
-    ctx.obj['pp'].pprint(keys.__dict__)
-    print('\n')
+    # ctx.obj['pp'].pprint(keys.__dict__)
+    # print('\n')
 
 
 @click.command()
-# @click.option('--is-this-email', prompt='Do you want to user your default email as sender?\n{}'.format('x'), default=True, is_flag=True, help='Whether sender email is your default email.')
 @click.pass_context
-def register(ctx, is_this_email):
+def register(ctx):
     """Register sc_mail API."""
     # Request register.
+    fingerprint = 'a'
+    r = {'fingerprint': fingerprint}
     res = json.loads(random_response())
-    if hasattr(res, 'success'):
+    if 'success' in res:
         print('Registration success.')
     else:
         print('Registration fail.\nError is: {}'.format(res['error']))
@@ -115,22 +123,24 @@ def register(ctx, is_this_email):
 @click.command()
 @click.option('--recipient', prompt='The recipient', required=True, help='The email address of the recipient.')
 @click.pass_context
-def retrieve(ctx):
+def retrieve(ctx, recipient):
     """Retrieve messages from API"""
     # Choose recipients
-    ctx.forward(list_keys, False)
+    ctx.invoke(list_keys, show_private=False)
     # Get response
     res = json.loads(random_response())
     # print(res)
-    if hasattr(res, 'success'):
+    if 'success' in res:
         print('The message retrieve successful.')
     else:
         print('The message retrieve fail.\nError is: {}'.format(res["error"]))
 
+    ctx['pp'].pprint(res)
+
 
 @click.command()
-@click.option('--recipient', prompt='The recipient', required=True, help='The email address of the recipient.')
-@click.option('--message', required=True, prompt='The message:\n', help='Message that will send.')
+@click.option('--recipient', prompt='The recipient', required=True, help='The fingerprint of the recipient.')
+@click.option('--message', required=True, prompt='The message', help='Message that will send.')
 @click.pass_context
 def send(ctx, recipient, message):
     """Send a message."""
@@ -142,10 +152,12 @@ def send(ctx, recipient, message):
     # Send
 
 
-client.add_command(set_user_info)
+# client.add_command(update_user_info)
 client.add_command(create_key)
 client.add_command(list_keys)
+client.add_command(register)
 client.add_command(send)
+client.add_command(retrieve)
 
 
 def random_response():
