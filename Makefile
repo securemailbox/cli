@@ -1,5 +1,5 @@
 PYTHON3=$(shell which python3)
-obj = mygnupg.py
+obj = scmail.py
 
 # just run python for test
 runpy:

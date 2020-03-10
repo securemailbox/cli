@@ -15,6 +15,8 @@ class GpgOpt():
         """
         print(mygnupghome)
         p = Path(mygnupghome)
+        if p.exists() is False:
+            p.mkdir(parents=True)
         self.gpg = gnupg.GPG(gnupghome=mygnupghome)
         self.key = None
         self.email = email

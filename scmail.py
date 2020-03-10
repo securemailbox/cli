@@ -24,7 +24,7 @@ def client(ctx):
 
     # If the config not exist, set user information. If not, run initial gpg.
     if config_path.exists() is False:
-        gnupghome, email = ctx.forward(set_user_info, click.prompt('Enter your gnupg home dir:', default='gnupgkeys'), click.prompt('Enter your email:', default=getlogin() + '@scmail.dev'))
+        gnupghome, email = ctx.invoke(set_user_info, gnupghome=click.prompt('Enter your gnupg home dir:', default='gnupgkeys'), email=click.prompt('Enter your email:', default=getlogin() + '@scmail.dev'))
     else:
         gnupghome, email = load_config()
 
