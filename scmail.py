@@ -1,3 +1,4 @@
+import requests
 import click
 import pprint
 import sys
@@ -110,6 +111,7 @@ def list_keys(ctx, show_private):
 @click.pass_context
 def register(ctx):
     """Register sc_mail API."""
+
     # Request register.
     fingerprint = 'a'
     r = {'fingerprint': fingerprint}
@@ -119,23 +121,34 @@ def register(ctx):
     else:
         print('Registration fail.\nError is: {}'.format(res['error']))
 
+    # Register
+    r = requests.post("http://127.0.0.1:8080/register/")
+    print(r.text)
+
 
 @click.command()
 @click.option('--recipient', prompt='The recipient', required=True, help='The email address of the recipient.')
 @click.pass_context
 def retrieve(ctx, recipient):
     """Retrieve messages from API"""
+
     # Choose recipients
     ctx.invoke(list_keys, show_private=False)
+
     # Get response
     res = json.loads(random_response())
+
     # print(res)
     if 'success' in res:
         print('The message retrieve successful.')
     else:
         print('The message retrieve fail.\nError is: {}'.format(res["error"]))
+    
+    #ctx['pp'].pprint(res)
 
-    ctx['pp'].pprint(res)
+    # Retrieve
+    r = requests.post("http://127.0.0.1:8080/retrieve/")
+    print(r.text)
 
 
 @click.command()
@@ -144,12 +157,16 @@ def retrieve(ctx, recipient):
 @click.pass_context
 def send(ctx, recipient, message):
     """Send a message."""
+
     # Choose recipient and Encrypted
-    encrypted_message = ctx['gpg'].encrypt_message(message, recipient)
-    if encrypted_message['ok'] is not True:
-        print('Error.')
+    #encrypted_message = ctx['gpg'].encrypt_message(message, recipient)
+    #if encrypted_message['ok'] is not True:
+    #    print('Error.')
 
     # Send
+    payload = {'fingerprint': recipient, 'message': message}
+    r = requests.post("http://127.0.0.1:8080/send/", json=payload)
+    print(r.text)
 
 
 # client.add_command(update_user_info)
