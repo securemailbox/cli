@@ -90,7 +90,7 @@ def create_key(ctx, key_type, key_length, expire_date, password):
     ctx.obj['pp'].pprint({'email': ctx.obj['gpg'].email, 'key type': key_type, 'key length': key_length, 'expire date': expire_date})
     print('\n')
     key = ctx.obj['gpg'].create(password, key_type=key_type, key_length=key_length, expire_date=expire_date)
-    # ctx.obj['pp'].pprint(key.__dict__)
+    ctx.obj['pp'].pprint(key.__dict__)
     # ctx.obj['pp'].pprint(key.__doc__)
 
 
@@ -103,7 +103,7 @@ def list_keys(ctx, show_private):
     keys = ctx.obj['gpg'].list_keys(show_private)
     key_type = 'public' if show_private is False else 'private'
     print('You have {} {} keys.'.format(len(keys), key_type))
-    # ctx.obj['pp'].pprint(keys.__dict__)
+    ctx.obj['pp'].pprint(keys.__dict__)
     # print('\n')
 
 
@@ -113,7 +113,7 @@ def register(ctx):
     """Register sc_mail API."""
 
     # Request register.
-    fingerprint = 'a'
+    fingerprint = ctx.obj['gpg'].list_keys(True).curkey['fingerprint']
     r = {'fingerprint': fingerprint}
     res = json.loads(random_response())
     if 'success' in res:
@@ -128,44 +128,43 @@ def register(ctx):
 
 @click.command()
 @click.option('--recipient', prompt='The recipient', required=True, help='The email address of the recipient.')
+@click.password_option('--password', prompt='Enter passwordo of private key to decrypt', help='The passphrase of private key')
 @click.pass_context
-def retrieve(ctx, recipient):
-    """Retrieve messages from API"""
-
-    # Choose recipients
-    ctx.invoke(list_keys, show_private=False)
-
-    # Get response
-    res = json.loads(random_response())
-
-    # print(res)
-    if 'success' in res:
-        print('The message retrieve successful.')
-    else:
-        print('The message retrieve fail.\nError is: {}'.format(res["error"]))
-    
-    #ctx['pp'].pprint(res)
-
+def retrieve(ctx, recipient, password):
+    """Retrieve and Post messages from API"""
     # Retrieve
     r = requests.post("http://127.0.0.1:8080/retrieve/")
-    print(r.text)
+    # Get response
+    res = json.loads(r)
+
+    # Decrypt the messages.
+    ok, messages = ctx.obj['gpg'].decrypt_message(messages=res, passphrase=password)
+    ctx.obj['pp'].pprint(messages[:-1])
+    if ok is False:
+        print('Other message decrypt fail.\n{}'.format(messages[-1]))
+    else:
+        ctx.obj['pp'].pprint(messages[-1])
+        print('Decrypt message successful.')
 
 
 @click.command()
-@click.option('--recipient', prompt='The recipient', required=True, help='The fingerprint of the recipient.')
+@click.option('--recipient', prompt='The recipient email', required=True, help='The email of the recipient.')
 @click.option('--message', required=True, prompt='The message', help='Message that will send.')
 @click.pass_context
 def send(ctx, recipient, message):
     """Send a message."""
 
     # Choose recipient and Encrypted
-    #encrypted_message = ctx['gpg'].encrypt_message(message, recipient)
-    #if encrypted_message['ok'] is not True:
-    #    print('Error.')
+    ok, encrypted_message = ctx.obj['gpg'].encrypt_message(message, recipient)
+    if ok is False:
+        print('Message encrypt fail.\n{}'.format(encrypted_message))
+    else:
+        print('Message encrypt success.')
 
     # Send
     payload = {'fingerprint': recipient, 'message': message}
     r = requests.post("http://127.0.0.1:8080/send/", json=payload)
+    r = json.loads(r)
     print(r.text)
 
 
