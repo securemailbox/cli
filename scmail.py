@@ -7,9 +7,6 @@ from os import getlogin
 import json
 from gpgopt import GpgOpt
 
-# for test
-import request
-
 # Import when api cannot used.
 from random import getrandbits
 
@@ -47,13 +44,6 @@ def load_config(ctx):
     return config[1], config[3]
 
 
-@click.command()
-@click.pass_context
-def choose_primary_key(ctx):
-    pass
-
-
-# @click.command()
 @click.pass_context
 def set_user_info(ctx, gnupghome, email):
     """Set user information and return gnupghome and email."""
@@ -90,7 +80,6 @@ def create_key(ctx, key_type, key_length, expire_date, password):
     print('\n')
     key = ctx.obj['gpg'].create(password, key_type=key_type, key_length=key_length, expire_date=expire_date)
     ctx.obj['pp'].pprint(key.__dict__)
-    # ctx.obj['pp'].pprint(key.__doc__)
 
 
 @click.command()
@@ -103,7 +92,6 @@ def list_keys(ctx, show_private):
     key_type = 'public' if show_private is False else 'private'
     print('You have {} {} keys.'.format(len(keys), key_type))
     ctx.obj['pp'].pprint(keys.__dict__)
-    # print('\n')
 
 
 @click.command()
@@ -111,13 +99,13 @@ def list_keys(ctx, show_private):
 def register(ctx):
     """Register sc_mail API."""
     # Request register.
-    fingerprint = ctx.obj['gpg'].list_keys(True).curkey['fingerprint']
+    fingerprint = ctx.obj['gpg'].list_keys(True).curkey.get('fingerprint')
     r = {'fingerprint': fingerprint}
     res = json.loads(random_response())
     if 'success' in res:
         print('Registration success.')
     else:
-        print('Registration fail.\nError is: {}'.format(res['error']))
+        print('Registration fail.\nError is: {}'.format(res.get("error")))
 
 
 @click.command()
@@ -132,7 +120,7 @@ def retrieve(ctx, recipient, password):
     if 'success' in res:
         print('The message retrieve successful.')
     else:
-        print('The message retrieve fail.\nError is: {}'.format(res["error"]))
+        print('The message retrieve fail.\nError is: {}'.format(res.get("error")))
         # return
 
     # Decrypt the messages.
@@ -160,26 +148,31 @@ def send(ctx, recipient, message):
     # Send
 
 
+@click.command()
+@click.option('--fingerprint', prompt='Enter the fingerprint of that key', required=True, help='The fingerprint of exported key.')
+@click.option('--is-file', prompt='Do you want to store keys to file (or print)?', is_flag=True, help='Whether export to file.')
+@click.option('--is-pvt', prompt='Do you want to export private key?', is_flag=True, help='Whether export private keys.')
+@click.password_option('--passphrase', prompt='Enter pvt\'s passphrase(if want export)', help='Passphrase of private key.')
+@click.pass_context
+def export_key(ctx, fingerprint, is_file, is_pvt):
+    file_name = None
+    passphrase = None
+
+    if is_file is True:
+        file_name = click.prompt('Enter the file name', type=str)
+        file_name = Path(file_name)
+    if is_pvt is True:
+        passphrase = click.prompt('Enter pvt\'s passphrase', hide_input=True, type=str)
+    
+    pub, pvt = ctx.obj.get('gpg').export_key(fingerprint, is_pvt, passphrase, is_file, file_name)
+
+
 # client.add_command(update_user_info)
 client.add_command(create_key)
 client.add_command(list_keys)
 client.add_command(register)
 client.add_command(send)
 client.add_command(retrieve)
-
-
-def random_response():
-    """Random response whether a api request is successful.
-    Only used when API is not finish.
-    """
-    succ = getrandbits(1)
-    js = {}
-    if succ == 1:
-        js['success'] = 1
-    else:
-        js['error'] = 'Not found'
-
-    return json.dumps(js)
 
 
 if __name__ == '__main__':
