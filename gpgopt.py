@@ -6,6 +6,7 @@ from random import randint
 
 class GpgOpt():
     """Initial gnupg, create, import, and export key pairs.
+
     create, import, and export key pairs.
     Also, can encrypt and decrypt message.
     """
@@ -13,12 +14,11 @@ class GpgOpt():
     def __init__(self, mygnupghome='gnupgkeys', email=getlogin() + '@scmail.dev'):
         """
         """
-        print(mygnupghome)
         p = Path(mygnupghome)
         if p.exists() is False:
             p.mkdir(parents=True)
+
         self.gpg = gnupg.GPG(gnupghome=mygnupghome)
-        self.key = None
         self.email = email
 
 
@@ -27,37 +27,34 @@ class GpgOpt():
         If exist, import it, if not, return false.
         """
         key_data = open(path).read()
-        self.key = self.gpg.import_keys(key_data)
 
 
     def create(self, password, key_type="RSA", key_length=1024, expire_date="2y"):
         """Create a new key pair. need parameters:
 
         Keyword arguments:
-        password -- required. the password of your pvt key.
-        key_type -- optional, algorithms to generate the key.
-        key_length -- optional, 
+        password: required. the password of your pvt key.
+        key_type: optional, algorithms to generate the key.
+        key_length: optional, 
         """
         # all parameters that user can choose.
         input_data = self.gpg.gen_key_input(name_email=self.email, key_type=key_type, passphrase=password,
                                             key_length=key_length, expire_date=expire_date)
 
         # generate key pair
-        # {'fingerprint': '', }
         return self.gpg.gen_key(input_data)
 
 
-    def export_key(self, export_pvt=False, password=None, to_file=False, path=None):
-        """
-        """
-        sc_pub = self.gpg.export_keys(self.key.fingerprint)
-        sc_pvt = self.gpg.export_keys(self.key.fingerprint, False, passphrase=password)
+    def export_key(self, fingerprint, export_pvt=False, password=None, to_file=False, path=None):
+        """Export key pair from the gnupg."""
+        sc_pub = self.gpg.export_keys(fingerprint)
+        sc_pvt = None
 
-        # print pub and pvt to the command line.
-        print(sc_pub, sc_pvt)
+        if export_pvt is True and password is not None:
+            sc_pvt = self.gpg.export_keys(fingerprint, True, passphrase=password)
 
         if to_file is False:
-            return
+            pass
         try:
             # store key to file
             with open(path, 'w') as f:
@@ -65,6 +62,8 @@ class GpgOpt():
                 f.write(sc_pvt)
         finally:
             raise Exception("the path not exist")
+
+        return sc_pub, sc_pvt
 
 
     def list_keys(self, sec=False):
@@ -100,12 +99,9 @@ class GpgOpt():
 
 if __name__ == "__main__":
     mygpg = GpgOpt()
-    mygpg.create('abcddeeff')
-    b = mygpg.list_keys(sec=False)
-    c = mygpg.gpg.encrypt("test", "gdajun@scmail.dev")
-    e = mygpg.gpg.encrypt('fdjkaldjflda', "gdajun@scmail.dev")
-    print(c.ok)
-    de = mygpg.gpg.decrypt(c.data+e.data, passphrase='abcddeeff')
-    # print(de.ok, de.stderr, de.status)
-    # print(de.__dict__)
-    print(de.data)
+    mygpg.create('1')
+    # t = mygpg.list_keys(True)
+    # f = mygpg.list_keys(False)
+    # mygpg.export_key(t.curkey['fingerprint'], True, '1')
+    # print(t.__dict__)
+    # print(f.__dict__)
