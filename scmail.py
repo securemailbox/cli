@@ -4,13 +4,12 @@ import pprint
 import sys
 import re
 from pathlib import Path
-from os import getlogin
+from os import getlogin, environ
 import json
 from gpgopt import GpgOpt
 
-# Import when api cannot used.
-from random import getrandbits
-
+# Default to localhost if url is not given
+SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "http://127.0.0.1:8080")
 
 @click.group()
 @click.pass_context
@@ -104,7 +103,8 @@ def register(ctx):
     data = {'fingerprint': fingerprint}
 
     # Register
-    r = requests.post("http://127.0.0.1:8080/register/")
+    address = SECUREMAILBOX_URL + '/register/'
+    r = requests.post(address)
     print(r.text)
 
     if 'success' in r:
@@ -120,7 +120,8 @@ def register(ctx):
 def retrieve(ctx, recipient, password):
     """Retrieve and Post messages from API"""
     # Retrieve
-    r = requests.post("http://127.0.0.1:8080/retrieve/")
+    address = SECUREMAILBOX_URL + '/retrieve/'
+    r = requests.post(address)
     # Get response
     res = json.loads(r)
     # print(res)
@@ -160,7 +161,8 @@ def send(ctx, recipient, message):
 
     # Send
     payload = {'fingerprint': recipient, 'message': message}
-    r = requests.post("http://127.0.0.1:8080/send/", json=payload)
+    address = SECUREMAILBOX_URL + '/send/'
+    r = requests.post(address, json=payload)
     r = json.loads(r)
     print(r.text)
 
