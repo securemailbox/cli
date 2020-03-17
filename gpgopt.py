@@ -53,16 +53,14 @@ class GpgOpt():
         if export_pvt is True and password is not None:
             sc_pvt = self.gpg.export_keys(fingerprint, True, passphrase=password)
 
-        if to_file is False:
-            pass
-
-        try:
-            # store key to file
-            with path.open('w') as f:
-                f.write(sc_pub)
-                f.write(sc_pvt)
-        except:
-            raise Exception("the path not exist")
+        if to_file is True:
+            try:
+                # store key to file
+                with path.open('w') as f:
+                    f.write(sc_pub)
+                    f.write(sc_pvt)
+            except:
+                raise Exception("the path not exist")
 
         return sc_pub, sc_pvt
 
@@ -72,13 +70,13 @@ class GpgOpt():
         return self.gpg.list_keys(secret=sec)
 
 
-    def encrypt_message(self, message, email):
+    def encrypt_message(self, message, recipient):
         """Encrypt the message and return the encrypted message.
 
         message: string message.
         email: string, email of recipient.
         """
-        msg = self.gpg.encrypt(message, email)
+        msg = self.gpg.encrypt(message, recipient)
         return (True, msg.data) if msg.ok else (False, msg.stderr)
 
 

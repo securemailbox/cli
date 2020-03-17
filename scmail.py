@@ -145,7 +145,12 @@ def retrieve(ctx, recipient, password):
 @click.option('--message', required=True, prompt='The message', help='Message that will send.')
 @click.pass_context
 def send(ctx, recipient, message):
-    """Send a message."""
+    """Send a message.
+
+    recipient: the fingerprint of recipient
+
+    message: the messages.
+    """
     # Choose recipient and Encrypted
     ok, encrypted_message = ctx.obj['gpg'].encrypt_message(message, recipient)
     if ok is False:
@@ -181,7 +186,8 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
     pub, pvt = ctx.obj.get('gpg').export_key(fingerprint, export_pvt=is_pvt, password=passphrase, to_file=is_file, path=file_name)
 
     if is_file is False:
-        ctx.obj.get('pp').pprint(pub, pvt)
+        ctx.obj.get('pp').pprint(pub)
+        ctx.obj.get('pp').pprint(pvt)
 
 
 # client.add_command(update_user_info)
