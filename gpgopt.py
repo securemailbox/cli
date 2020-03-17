@@ -55,12 +55,13 @@ class GpgOpt():
 
         if to_file is False:
             pass
+
         try:
             # store key to file
-            with open(path, 'w') as f:
+            with path.open('w') as f:
                 f.write(sc_pub)
                 f.write(sc_pvt)
-        finally:
+        except:
             raise Exception("the path not exist")
 
         return sc_pub, sc_pvt

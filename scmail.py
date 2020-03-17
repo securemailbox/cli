@@ -164,7 +164,6 @@ def send(ctx, recipient, message):
 @click.option('--fingerprint', prompt='Enter the fingerprint of that key', required=True, help='The fingerprint of exported key.')
 @click.option('--is-file', prompt='Do you want to store keys to file (or print)?', is_flag=True, help='Whether export to file.')
 @click.option('--is-pvt', prompt='Do you want to export private key?', is_flag=True, help='Whether export private keys.')
-@click.password_option('--passphrase', prompt='Enter pvt\'s passphrase(if want export)', help='Passphrase of private key.')
 @click.pass_context
 def export_key(ctx, fingerprint, is_file, is_pvt):
     file_name = None
@@ -173,10 +172,16 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
     if is_file is True:
         file_name = click.prompt('Enter the file name', type=str)
         file_name = Path(file_name)
+        if file_name.exists() is False:
+            file_name.touch()
+
     if is_pvt is True:
         passphrase = click.prompt('Enter pvt\'s passphrase', hide_input=True, type=str)
-    
-    pub, pvt = ctx.obj.get('gpg').export_key(fingerprint, is_pvt, passphrase, is_file, file_name)
+
+    pub, pvt = ctx.obj.get('gpg').export_key(fingerprint, export_pvt=is_pvt, password=passphrase, to_file=is_file, path=file_name)
+
+    if is_file is False:
+        ctx.obj.get('pp').pprint(pub, pvt)
 
 
 # client.add_command(update_user_info)
