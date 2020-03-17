@@ -99,19 +99,18 @@ def list_keys(ctx, show_private):
 @click.pass_context
 def register(ctx):
     """Register sc_mail API."""
-
     # Request register.
     fingerprint = ctx.obj['gpg'].list_keys(True).curkey.get('fingerprint')
-    r = {'fingerprint': fingerprint}
-    res = json.loads(random_response())
-    if 'success' in res:
-        print('Registration success.')
-    else:
-        print('Registration fail.\nError is: {}'.format(res.get("error")))
+    data = {'fingerprint': fingerprint}
 
     # Register
     r = requests.post("http://127.0.0.1:8080/register/")
     print(r.text)
+
+    if 'success' in r:
+        print('Registration success.')
+    else:
+        print('Registration fail.\nError is: {}'.format(r.get("error")))
 
 
 @click.command()
@@ -147,7 +146,6 @@ def retrieve(ctx, recipient, password):
 @click.pass_context
 def send(ctx, recipient, message):
     """Send a message."""
-
     # Choose recipient and Encrypted
     ok, encrypted_message = ctx.obj['gpg'].encrypt_message(message, recipient)
     if ok is False:
