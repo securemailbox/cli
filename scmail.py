@@ -185,6 +185,7 @@ client.add_command(list_keys)
 client.add_command(register)
 client.add_command(send)
 client.add_command(retrieve)
+client.add_command(export_key)
 
 
 if __name__ == '__main__':
