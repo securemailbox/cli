@@ -214,7 +214,7 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
             logging.debug('file not exists.')
         except FileExistsError:
             logging.error('Cause the path already exist, export to file failed.')
-            logging.warning('Mail Client Exist.')
+            logging.warning('Mail Client Exit.')
             if click.confirm('Do you want to print on console?', default=True):
                 is_file = False
             else:
