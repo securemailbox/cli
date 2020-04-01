@@ -1,46 +1,64 @@
 import requests
 import click
 import pprint
-import sys
 import re
 from pathlib import Path
-from os import getlogin, environ
-import json
+from os import environ
+import getpass
 from gpgopt import GpgOpt
+import logging
+import time
 
 # Default to localhost if url is not given
 SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "http://127.0.0.1:8080")
 
+# Logging Level
+LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.DEBUG)
+
 @click.group()
 @click.pass_context
 def client(ctx):
-    """Initial gnupg."""
+    """Initial client."""
+    # Bacis config of logging
+    Path('log').mkdir(exist_ok=True)
+    times = time.strftime("%Y%m%d%H%M%S",time.localtime())
+    logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s',
+        level=LOGGING_LEVEL,
+        handlers=[
+            logging.FileHandler(filename=Path('log', times)),
+            logging.StreamHandler()
+        ]
+    )
+    ctx.logger = logging.getLogger(__name__)
+
     # Set config file path.
-    config_path = Path('scmail.conf')
-    ctx.obj['config'] = config_path
+    ctx.config = Path('scmail.conf')
 
     # If the config not exist, set user information. If not, run initial gpg.
-    if config_path.exists() is False:
-        gnupghome, email = ctx.invoke(set_user_info, gnupghome=click.prompt('Enter your gnupg home dir:', default='gnupgkeys'), email=click.prompt('Enter your email:', default=getlogin() + '@scmail.dev'))
-    else:
-        gnupghome, email = load_config()
+    gnupghome, email = load_config() if ctx.config.exists() else ctx.invoke(set_user_info, gnupghome=click.prompt('Enter your gnupg home dir:', default='gnupgkeys'), email=click.prompt('Enter your email:', default= f'{getpass.getuser()}@scmail.dev'))
+    # ctx.obj.get('logger').debug(f'gnupg home is {gnupghome}, email is {email}')
+    ctx.logger.debug(f'gnupg home is {gnupghome}, email is {email}')
 
-    ctx.obj['gpg'] = GpgOpt(mygnupghome=gnupghome, email=email)
+    # ctx.obj['gpg'] = GpgOpt(mygnupghome=gnupghome, email=email)
+    ctx.gpg = GpgOpt(mygnupghome=gnupghome, email=email)
+
     # Initial pretty printer
-    ctx.obj['pp'] = pprint.PrettyPrinter(indent=2)
+    ctx.pp = pprint.PrettyPrinter(indent=2)
+
+    logging.info('Initialize client successful.')
 
 
 @click.pass_context
 def load_config(ctx):
     """Load config file."""
-    print("Now, laod previous config file:")
-    f = ctx.obj['config'].open('r').read()
+    f = ctx.config.open('r').read()
     config = re.split('\n|=', f)
 
     for i in range(0, len(config), 2):
-        print('The {} is: {}'.format(config[i], config[i + 1]))
+        print(f'The {config[i]} is: {config[i+1]}')
 
-    print('\n')
+    print()
+    logging.info('Config file exists. Load Successful.')
     return config[1], config[3]
 
 
@@ -50,36 +68,41 @@ def set_user_info(ctx, gnupghome, email):
     config = 'gnupghome=' + gnupghome + '\n' + 'email=' + email
 
     # Store config file and other information.
-    ctx.obj['config'].touch()
-    with ctx.obj['config'].open('w') as f:
+    ctx.config.touch(exist_ok=False)
+    with ctx.config.open('w') as f:
         f.write(config)
 
+    logging.info('Setting user information finish.')
     return gnupghome, email
 
 
-@click.command()
-@click.option('--gnupghome', prompt='Enter your gnupg home dir', default='gnupgkeys',
-              help='The home dir of gnupg key pairs.')
-@click.option('--email', prompt='Enter your email', default=getlogin() + '@scmail.dev', help='The email of user.')
-@click.pass_context
-def update_user_info(ctx, gnupghome, email):
-    """Update gnupg home dir and personal email"""
-    pass
+# @click.command()
+# @click.option('--gnupghome', prompt='Enter your gnupg home dir', default='gnupgkeys',
+#               help='The home dir of gnupg key pairs.')
+# @click.option('--email', prompt='Enter your email', default=getlogin() + '@scmail.dev', help='The email of user.')
+# @click.pass_context
+# def update_user_info(ctx, gnupghome, email):
+#     """Update gnupg home dir and personal email"""
+#     pass
 
 
 @click.command()
 @click.option('--key-type', prompt='Enter key type', default="RSA", help='The algorithms to generate the key. ex. RSA')
 @click.option('--key-length', prompt='Enter key length', default=1024, help='The length of the key.')
-@click.option('--expire-date', prompt='Enter expire date', default="2y", help='The expire time of the key pair.')
+@click.option('--expire-date', prompt='Enter expire date', default="2y", help='The expire time of the key pair. 0 or empty for never expire.')
 @click.password_option('--password', prompt='Enter private key password', help='Password of private key.')
 @click.pass_context
 def create_key(ctx, key_type, key_length, expire_date, password):
     """Create gnupg key pairs."""
-    print('Those are the information about the key will be created:\n')
-    ctx.obj['pp'].pprint({'email': ctx.obj['gpg'].email, 'key type': key_type, 'key length': key_length, 'expire date': expire_date})
-    print('\n')
-    key = ctx.obj['gpg'].create(password, key_type=key_type, key_length=key_length, expire_date=expire_date)
-    ctx.obj['pp'].pprint(key.__dict__)
+    logging.debug(f'Information about key:\nkey type: {key_type}\nkey length: {key_length}\nexpire date: {expire_date}\n')
+
+    # Warning if key never expire and user want to continue.
+    if expire_date == 0 and not click.confirm('0 means never expire, Do you want to continue?'):
+        logging.warning('Never expire key will be created.')
+
+    key = ctx.parent.gpg.create(password, key_type=key_type, key_length=key_length, expire_date=expire_date)
+    ctx.parent.pp.pprint(key.__dict__)
+    logging.info('Key Creation finished.')
 
 
 @click.command()
@@ -88,10 +111,12 @@ def create_key(ctx, key_type, key_length, expire_date, password):
 @click.pass_context
 def list_keys(ctx, show_private):
     """List and print all the keys in the gnupg home dir."""
-    keys = ctx.obj['gpg'].list_keys(show_private)
+    keys = ctx.parent.gpg.list_keys(show_private)
     key_type = 'public' if show_private is False else 'private'
-    print('You have {} {} keys.'.format(len(keys), key_type))
-    ctx.obj['pp'].pprint(keys.__dict__)
+
+    logging.info(f'{len(keys)} {key_type} keys exist.')
+    ctx.parent.pp.pprint(keys.__dict__)
+    logging.info('List keys finished.')
 
 
 @click.command()
@@ -99,18 +124,22 @@ def list_keys(ctx, show_private):
 def register(ctx):
     """Register sc_mail API."""
     # Request register.
-    fingerprint = ctx.obj['gpg'].list_keys(True).curkey.get('fingerprint')
+    logging.debug('begin register.')
+    fingerprint = ctx.parent.gpg.list_keys(True).curkey.get('fingerprint')
+    logging.debug(f'Getting fingerprint: {fingerprint}')
     data = {'fingerprint': fingerprint}
 
     # Register
-    address = SECUREMAILBOX_URL + '/register/'
-    r = requests.post(address)
-    print(r.text)
+    r = requests.post(SECUREMAILBOX_URL + '/register/', json=data)
+    logging.debug(f'response is: \n{r}')
+    res = r.json()
+    logging.debug(f'response is: \n{res}')
 
-    if 'success' in r:
-        print('Registration success.')
+    if r.status_code == 200:
+        logging.info('Registration success.')
+        ctx.parent.pp.pprint(r.json())
     else:
-        print('Registration fail.\nError is: {}'.format(r.get("error")))
+        logging.error(f'Registration fail.\nError {r.status_code} is: {res.get("error")}')
 
 
 @click.command()
@@ -119,30 +148,29 @@ def register(ctx):
 @click.pass_context
 def retrieve(ctx, recipient, password):
     """Retrieve and Post messages from API"""
+    data = {'fingerprint': ctx.parent.gpg.list_keys(False).curkey.get('fingerprint')}
     # Retrieve
-    address = SECUREMAILBOX_URL + '/retrieve/'
-    r = requests.post(address)
-    # Get response
-    res = json.loads(r)
-    # print(res)
-    if 'success' in res:
-        print('The message retrieve successful.')
+    r = requests.post(SECUREMAILBOX_URL + '/retrieve/', json=data)
+    res = r.json()
+
+    if r.status_code == 200:
+        logging.info('The message retrieve successful.')
     else:
-        print('The message retrieve fail.\nError is: {}'.format(res.get("error")))
-        # return
+        logging.error(f'The message retrieve fail.\nError {r.status_code} is: {res.get("error")}')
+        return
 
     # Decrypt the messages.
-    ok, messages = ctx.obj['gpg'].decrypt_message(messages=res, passphrase=password)
-    ctx.obj['pp'].pprint(messages[:-1])
+    ok, messages = ctx.parent.gpg.decrypt_message(messages=res.get('error'), passphrase=password)
+    ctx.parent.pp.pprint(messages[:-1])
     if ok is False:
-        print('Other message decrypt fail.\n{}'.format(messages[-1]))
+        logging.error(f'Other message decrypt fail.\n{messages[-1]}')
     else:
-        ctx.obj['pp'].pprint(messages[-1])
-        print('Decrypt message successful.')
+        ctx.parent.pp.pprint(messages[-1])
+        logging.info('Decrypt message successful.')
 
 
 @click.command()
-@click.option('--recipient', prompt='The recipient email', required=True, help='The email of the recipient.')
+@click.option('--recipient', prompt='The recipient fingerprint', required=True, help='The fingerprint of the recipient.')
 @click.option('--message', required=True, prompt='The message', help='Message that will send.')
 @click.pass_context
 def send(ctx, recipient, message):
@@ -153,18 +181,20 @@ def send(ctx, recipient, message):
     message: the messages.
     """
     # Choose recipient and Encrypted
-    ok, encrypted_message = ctx.obj['gpg'].encrypt_message(message, recipient)
+    ok, encrypted_message = ctx.parent.gpg.encrypt_message(message, recipient)
     if ok is False:
-        print('Message encrypt fail.\n{}'.format(encrypted_message))
+        logging.error(f'Message encrypt fail.\n{encrypted_message}')
     else:
-        print('Message encrypt success.')
+        logging.info('Message encrypt success.')
 
     # Send
     payload = {'fingerprint': recipient, 'message': message}
-    address = SECUREMAILBOX_URL + '/send/'
-    r = requests.post(address, json=payload)
-    r = json.loads(r)
-    print(r.text)
+    r = requests.post(SECUREMAILBOX_URL + '/send/', json=payload)
+
+    if r.status_code == 200:
+        logging.info('Sending message success.')
+    else:
+        logging.error(f'Sending message fail.\nError {r.status_code} is: {r.json().get("error")}')
 
 
 @click.command()
@@ -178,18 +208,41 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
 
     if is_file is True:
         file_name = click.prompt('Enter the file name', type=str)
-        file_name = Path(file_name)
-        if file_name.exists() is False:
-            file_name.touch()
+        try:
+            file_name = Path(file_name)
+            file_name.touch(exist_ok=False)
+            logging.debug('file not exists.')
+        except FileExistsError:
+            logging.error('Cause the path already exist, export to file failed.')
+            logging.warning('Mail Client Exist.')
+            if click.confirm('Do you want to print on console?', default=True):
+                is_file = False
+            else:
+                return
+
+            pass
 
     if is_pvt is True:
         passphrase = click.prompt('Enter pvt\'s passphrase', hide_input=True, type=str)
 
-    pub, pvt = ctx.obj.get('gpg').export_key(fingerprint, export_pvt=is_pvt, password=passphrase, to_file=is_file, path=file_name)
+    pub, pvt = ctx.parent.gpg.export_key(fingerprint, export_pvt=is_pvt, password=passphrase)
 
     if is_file is False:
-        ctx.obj.get('pp').pprint(pub)
-        ctx.obj.get('pp').pprint(pvt)
+        ctx.parent.pp.pprint(pub)
+        if is_pvt is True:
+            ctx.parent.pp.pprint(pvt)
+    else:
+        with file_name.open('w') as f:
+            f.write(pub)
+            f.write(pvt)
+
+    logging.info('Export key successful.')
+
+
+@click.command()
+@click.pass_context
+def import_key(ctx, path):
+    pass
 
 
 # client.add_command(update_user_info)
@@ -199,7 +252,8 @@ client.add_command(register)
 client.add_command(send)
 client.add_command(retrieve)
 client.add_command(export_key)
+client.add_command(import_key)
 
 
 if __name__ == '__main__':
-    client(obj={})
+    client()

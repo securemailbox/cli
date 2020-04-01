@@ -1,7 +1,11 @@
 import gnupg
 from pathlib import Path
-from os import getlogin
+import getpass
 from random import randint
+import logging
+
+# For Testing
+import time
 
 
 class GpgOpt():
@@ -11,31 +15,52 @@ class GpgOpt():
     Also, can encrypt and decrypt message.
     """
 
-    def __init__(self, mygnupghome='gnupgkeys', email=getlogin() + '@scmail.dev'):
+    def __init__(self, mygnupghome, email):
         """
         """
-        p = Path(mygnupghome)
-        if p.exists() is False:
-            p.mkdir(parents=True)
+        Path(mygnupghome).mkdir(parents=True, exist_ok=True)
+        self.logger = logging.getLogger(__name__)
+        self.logger.debug('Home Dir of GnuPG exists.')
 
         self.gpg = gnupg.GPG(gnupghome=mygnupghome)
         self.email = email
+        self.logger.info('Initialize GnuPG successful.')
 
 
     def import_key(self, path):
         """Check whether the gnupg pub or pvt key already exist.
+
         If exist, import it, if not, return false.
         """
-        key_data = open(path).read()
+        try:
+            path = Path(path)
+            key_data = path.open().read()
+        except FileNotFoundError:
+            logging.error('The file path is wrong. File not found.')
+            return False
+        except OSError:
+            logging.error('Cannot read the file.')
+            return False
+        finally:
+            return False
+            pass
+
+        result = self.gpg.import_keys(key_data=key_data)
+        return result.imported, result.counts
 
 
     def create(self, password, key_type="RSA", key_length=1024, expire_date="2y"):
         """Create a new key pair. need parameters:
 
         Keyword arguments:
+
         password: required. the password of your pvt key.
+
         key_type: optional, algorithms to generate the key.
-        key_length: optional, 
+
+        key_length: optional, the length of key.
+
+        expire_date: optional, expire date of this key.
         """
         # all parameters that user can choose.
         input_data = self.gpg.gen_key_input(name_email=self.email, key_type=key_type, passphrase=password,
@@ -45,22 +70,13 @@ class GpgOpt():
         return self.gpg.gen_key(input_data)
 
 
-    def export_key(self, fingerprint, export_pvt=False, password=None, to_file=False, path=None):
+    def export_key(self, fingerprint, export_pvt=False, password=None):
         """Export key pair from the gnupg."""
         sc_pub = self.gpg.export_keys(fingerprint)
         sc_pvt = None
 
         if export_pvt is True and password is not None:
             sc_pvt = self.gpg.export_keys(fingerprint, True, passphrase=password)
-
-        if to_file is True:
-            try:
-                # store key to file
-                with path.open('w') as f:
-                    f.write(sc_pub)
-                    f.write(sc_pvt)
-            except:
-                raise Exception("the path not exist")
 
         return sc_pub, sc_pvt
 
@@ -74,6 +90,7 @@ class GpgOpt():
         """Encrypt the message and return the encrypted message.
 
         message: string message.
+
         email: string, email of recipient.
         """
         msg = self.gpg.encrypt(message, recipient)
@@ -84,6 +101,7 @@ class GpgOpt():
         """Decrypt the message and return the original message.
 
         message: list of string messages.
+
         passphrase: string, passphrase of the private key.
         """
         msgs = []
@@ -97,10 +115,17 @@ class GpgOpt():
 
 
 if __name__ == "__main__":
-    mygpg = GpgOpt()
-    mygpg.create('1')
-    # t = mygpg.list_keys(True)
-    # f = mygpg.list_keys(False)
-    # mygpg.export_key(t.curkey['fingerprint'], True, '1')
-    # print(t.__dict__)
-    # print(f.__dict__)
+    mygpg = GpgOpt(mygnupghome='gnupgkeys', email=getpass.getuser())
+    times = time.strftime("%Y%m%d%H%M%S",time.localtime())
+    LOGGING_LEVEL = logging.DEBUG
+    logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s',
+        level=LOGGING_LEVEL,
+        handlers=[
+            logging.FileHandler(filename=Path('log', times)),
+            logging.StreamHandler()
+        ]
+    )
+    # Test import key
+    path = 'b'
+    res = mygpg.import_key(path=path)
+    print(res)

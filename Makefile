@@ -9,4 +9,4 @@ run: $(obj)
 	pipenv run python3 $(obj)
 
 clear:
-	rm -rf gnupgkeys/* jskey.asc scmail.conf
+	rm -rf gnupgkeys/* jskey.asc scmail.conf log
