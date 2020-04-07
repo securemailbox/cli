@@ -1,11 +1,11 @@
 import gnupg
 from pathlib import Path
-import getpass
 from random import randint
 import logging
 
 # For Testing
 import time
+import getpass
 
 
 class GpgOpt():
@@ -15,7 +15,7 @@ class GpgOpt():
     Also, can encrypt and decrypt message.
     """
 
-    def __init__(self, mygnupghome, email):
+    def __init__(self, mygnupghome):
         """
         """
         Path(mygnupghome).mkdir(parents=True, exist_ok=True)
@@ -23,7 +23,6 @@ class GpgOpt():
         self.logger.debug('Home Dir of GnuPG exists.')
 
         self.gpg = gnupg.GPG(gnupghome=mygnupghome)
-        self.email = email
         self.logger.info('Initialize GnuPG successful.')
 
 
@@ -49,12 +48,16 @@ class GpgOpt():
         return result.imported, result.counts
 
 
-    def create(self, password, key_type="RSA", key_length=1024, expire_date="2y"):
+    def create(self, password, name, email, key_type, key_length, expire_date):
         """Create a new key pair. need parameters:
 
         Keyword arguments:
 
         password: required. the password of your pvt key.
+
+        name: optional, the name of user.
+
+        email: optional, the email address of user.
 
         key_type: optional, algorithms to generate the key.
 
@@ -63,8 +66,13 @@ class GpgOpt():
         expire_date: optional, expire date of this key.
         """
         # all parameters that user can choose.
-        input_data = self.gpg.gen_key_input(name_email=self.email, key_type=key_type, passphrase=password,
-                                            key_length=key_length, expire_date=expire_date)
+        input_data = self.gpg.gen_key_input(
+            name_real=name,
+            name_email=email, 
+            key_type=key_type, 
+            passphrase=password,
+            key_length=key_length, 
+            expire_date=expire_date)
 
         # generate key pair
         return self.gpg.gen_key(input_data)
@@ -105,6 +113,9 @@ class GpgOpt():
         passphrase: string, passphrase of the private key.
         """
         msgs = []
+        if messages is None:
+            msgs = ['No message.']
+            return (True, msgs)
         for message in messages:
             msg = self.gpg.decrypt(message=message, passphrase=passphrase)
             if msg.ok is False:
@@ -116,12 +127,12 @@ class GpgOpt():
 
 if __name__ == "__main__":
     mygpg = GpgOpt(mygnupghome='gnupgkeys', email=getpass.getuser())
-    times = time.strftime("%Y%m%d%H%M%S",time.localtime())
+    LOG_TIME_FORMAT = time.strftime("%Y%m%d%H%M%S",time.localtime())
     LOGGING_LEVEL = logging.DEBUG
     logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s',
         level=LOGGING_LEVEL,
         handlers=[
-            logging.FileHandler(filename=Path('log', times)),
+            logging.FileHandler(filename=Path('log', LOG_TIME_FORMAT)),
             logging.StreamHandler()
         ]
     )

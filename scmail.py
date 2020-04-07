@@ -35,12 +35,11 @@ def client(ctx):
     ctx.config = Path('scmail.conf')
 
     # If the config not exist, set user information. If not, run initial gpg.
-    gnupghome, email = load_config() if ctx.config.exists() else ctx.invoke(set_user_info, gnupghome=click.prompt('Enter your gnupg home dir:', default='gnupgkeys'), email=click.prompt('Enter your email:', default= f'{getpass.getuser()}@scmail.dev'))
-    # ctx.obj.get('logger').debug(f'gnupg home is {gnupghome}, email is {email}')
-    ctx.logger.debug(f'gnupg home is {gnupghome}, email is {email}')
+    gnupghome = load_config() if ctx.config.exists() else ctx.invoke(set_user_info,
+        gnupghome=click.prompt('Enter your gnupg home dir:',default='gnupgkeys'))
+    ctx.logger.debug(f'gnupg home is {gnupghome}')
 
-    # ctx.obj['gpg'] = GpgOpt(mygnupghome=gnupghome, email=email)
-    ctx.gpg = GpgOpt(mygnupghome=gnupghome, email=email)
+    ctx.gpg = GpgOpt(mygnupghome=gnupghome)
 
     # Initial pretty printer
     ctx.pp = pprint.PrettyPrinter(indent=2)
@@ -53,19 +52,20 @@ def load_config(ctx):
     """Load config file."""
     f = ctx.config.open('r').read()
     config = re.split('\n|=', f)
+    logging.debug(f'read config file:{config}')
 
-    for i in range(0, len(config), 2):
+    for i in range(0, len(config)-1, 2):
         print(f'The {config[i]} is: {config[i+1]}')
 
     print()
     logging.info('Config file exists. Load Successful.')
-    return config[1], config[3]
+    return config[1]
 
 
 @click.pass_context
-def set_user_info(ctx, gnupghome, email):
+def set_user_info(ctx, gnupghome):
     """Set user information and return gnupghome and email."""
-    config = 'gnupghome=' + gnupghome + '\n' + 'email=' + email
+    config = 'gnupghome=' + gnupghome + '\n'
 
     # Store config file and other information.
     ctx.config.touch(exist_ok=False)
@@ -73,7 +73,7 @@ def set_user_info(ctx, gnupghome, email):
         f.write(config)
 
     logging.info('Setting user information finish.')
-    return gnupghome, email
+    return gnupghome
 
 
 # @click.command()
@@ -87,26 +87,28 @@ def set_user_info(ctx, gnupghome, email):
 
 
 @click.command()
-@click.option('--key-type', prompt='Enter key type', default="RSA", help='The algorithms to generate the key. ex. RSA')
-@click.option('--key-length', prompt='Enter key length', default=1024, help='The length of the key.')
-@click.option('--expire-date', prompt='Enter expire date', default="2y", help='The expire time of the key pair. 0 or empty for never expire.')
-@click.password_option('--password', prompt='Enter private key password', help='Password of private key.')
+@click.option('--name', '-n', prompt='Enter Name', default=getpass.getuser(), help='Generator name.')
+@click.option('--email', '-e', prompt='Enter Email', default=f'{getpass.getuser()}@scmail.dev', help='The user email address.')
+@click.option('--key-type', '-t', prompt='Enter key type', default="RSA", help='The algorithms to generate the key. ex. RSA')
+@click.option('--key-length', '-l', prompt='Enter key length', default=1024, help='The length of the key.')
+@click.option('--expire-date', '-d', prompt='Enter expire date', default="2y", help='The expire time of the key pair. 0 or empty for never expire.')
+@click.password_option('--password', '-p', prompt='Enter private key password', help='Password of private key.')
 @click.pass_context
-def create_key(ctx, key_type, key_length, expire_date, password):
+def create_key(ctx, name, email, key_type, key_length, expire_date, password):
     """Create gnupg key pairs."""
-    logging.debug(f'Information about key:\nkey type: {key_type}\nkey length: {key_length}\nexpire date: {expire_date}\n')
+    logging.debug(f'Information about key:\nName: {name}\nEmail: {email}\nkey type: {key_type}\nkey length: {key_length}\nexpire date: {expire_date}\n')
 
     # Warning if key never expire and user want to continue.
     if expire_date == 0 and not click.confirm('0 means never expire, Do you want to continue?'):
         logging.warning('Never expire key will be created.')
 
-    key = ctx.parent.gpg.create(password, key_type=key_type, key_length=key_length, expire_date=expire_date)
+    key = ctx.parent.gpg.create(password=password, name=name, email=email, key_type=key_type, key_length=key_length, expire_date=expire_date)
     ctx.parent.pp.pprint(key.__dict__)
     logging.info('Key Creation finished.')
 
 
 @click.command()
-@click.option('--show-private', prompt='Do you want to show the private keys?', default=False, is_flag=True,
+@click.option('--show-private', '-s', prompt='Do you want to show the private keys?', default=False, is_flag=True,
               help='Whether show the private keys')
 @click.pass_context
 def list_keys(ctx, show_private):
@@ -120,22 +122,23 @@ def list_keys(ctx, show_private):
 
 
 @click.command()
+@click.option('--fingerprint', '-f', prompt='Register fingerprint', required=True, help='The fingerprint used to register.')
 @click.pass_context
-def register(ctx):
-    """Register sc_mail API."""
+def register(ctx, fingerprint):
+    """Register scmail API."""
     # Request register.
     logging.debug('begin register.')
-    fingerprint = ctx.parent.gpg.list_keys(True).curkey.get('fingerprint')
     logging.debug(f'Getting fingerprint: {fingerprint}')
     data = {'fingerprint': fingerprint}
 
     # Register
     r = requests.post(SECUREMAILBOX_URL + '/register/', json=data)
-    logging.debug(f'response is: \n{r}')
+    logging.debug(f'original response is: {r}')
+    logging.debug(f'{r.text}')
     res = r.json()
     logging.debug(f'response is: \n{res}')
 
-    if r.status_code == 200:
+    if r.status_code == 200 and res.get('success') == True:
         logging.info('Registration success.')
         ctx.parent.pp.pprint(r.json())
     else:
@@ -143,15 +146,20 @@ def register(ctx):
 
 
 @click.command()
-@click.option('--recipient', prompt='The recipient', required=True, help='The email address of the recipient.')
-@click.password_option('--password', prompt='Enter passwordo of private key to decrypt', help='The passphrase of private key')
+@click.option('--fingerprint', '-f', prompt='Enter fingerprint of mailbox', required=True, help='The fingerprint of the yourself mailbox.')
+@click.option('--sender-fingerprint', '-s', prompt='Enter the fingerprint of sender', default=None, help='The senders fingerprint.')
+@click.password_option('--password', '-p', prompt='Enter password of private key', help='The passphrase of private key')
 @click.pass_context
-def retrieve(ctx, recipient, password):
+def retrieve(ctx, fingerprint, sender_fingerprint, password):
     """Retrieve and Post messages from API"""
-    data = {'fingerprint': ctx.parent.gpg.list_keys(False).curkey.get('fingerprint')}
+    logging.debug(fingerprint, sender_fingerprint)
+    data = {'fingerprint': fingerprint}
+    if not sender_fingerprint:
+        data.update(sender_fingerprint, sender_fingerprint)
     # Retrieve
     r = requests.post(SECUREMAILBOX_URL + '/retrieve/', json=data)
     res = r.json()
+    logging.debug(f'response is: {res}')
 
     if r.status_code == 200:
         logging.info('The message retrieve successful.')
@@ -170,8 +178,8 @@ def retrieve(ctx, recipient, password):
 
 
 @click.command()
-@click.option('--recipient', prompt='The recipient fingerprint', required=True, help='The fingerprint of the recipient.')
-@click.option('--message', required=True, prompt='The message', help='Message that will send.')
+@click.option('--recipient', '-r', prompt='The recipient fingerprint', required=True, help='The fingerprint of the recipient.')
+@click.option('--message', '-m', required=True, prompt='The message', help='Message that will send.')
 @click.pass_context
 def send(ctx, recipient, message):
     """Send a message.
@@ -245,7 +253,6 @@ def import_key(ctx, path):
     pass
 
 
-# client.add_command(update_user_info)
 client.add_command(create_key)
 client.add_command(list_keys)
 client.add_command(register)
