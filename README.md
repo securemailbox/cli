@@ -51,7 +51,7 @@ options:
 ### Register
 
 ```bash
-pipenv run python sc_mail.py register
+pipenv run python scmail.py register
 ```
 
 options:
@@ -61,18 +61,19 @@ options:
 ### Retrieve
 
 ```bash
-pipenv run python sc_mail.py retrieve
+pipenv run python scmail.py retrieve
 ```
 
 options:
 
-- fingerprint: user's fingerprint
+- fingerprint: user's fingerprint.
+- sender_fingerprint: optional, sender's fingerprint.
 - password: the password of private key.
 
 ### Send
 
 ```bash
-pipenv run python sc_mail.py send
+pipenv run python scmail.py send
 ```
 
 options:
@@ -83,7 +84,7 @@ options:
 ### List key
 
 ```bash
-pipenv run python sc_mail.py list_keys
+pipenv run python scmail.py list_keys
 ```
 
 options:
@@ -98,5 +99,5 @@ Help about all commands.
 pipenv run python scmail.py --help
 
 # or all options about one command.
-pipenv run python sc_mail.py [command] --help
+pipenv run python scmail.py [command] --help
 ```
