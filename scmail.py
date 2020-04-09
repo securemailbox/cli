@@ -76,16 +76,6 @@ def set_user_info(ctx, gnupghome):
     return gnupghome
 
 
-# @click.command()
-# @click.option('--gnupghome', prompt='Enter your gnupg home dir', default='gnupgkeys',
-#               help='The home dir of gnupg key pairs.')
-# @click.option('--email', prompt='Enter your email', default=getlogin() + '@scmail.dev', help='The email of user.')
-# @click.pass_context
-# def update_user_info(ctx, gnupghome, email):
-#     """Update gnupg home dir and personal email"""
-#     pass
-
-
 @click.command()
 @click.option('--name', '-n', prompt='Enter Name', default=getpass.getuser(), help='Generator name.')
 @click.option('--email', '-e', prompt='Enter Email', default=f'{getpass.getuser()}@scmail.dev', help='The user email address.')
@@ -133,14 +123,12 @@ def register(ctx, fingerprint):
 
     # Register
     r = requests.post(SECUREMAILBOX_URL + '/register/', json=data)
-    logging.debug(f'original response is: {r}')
-    logging.debug(f'{r.text}')
     res = r.json()
     logging.debug(f'response is: \n{res}')
 
     if r.status_code == 200 and res.get('success') == True:
         logging.info('Registration success.')
-        ctx.parent.pp.pprint(r.json())
+        ctx.parent.pp.pprint(res.get('data').get('mailbox'))
     else:
         logging.error(f'Registration fail.\nError {r.status_code} is: {res.get("error")}')
 
@@ -248,9 +236,21 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
 
 
 @click.command()
+@click.option('--file-path', '-p', prompt='Enter file path', required=True, help='The path of imported key.')
 @click.pass_context
-def import_key(ctx, path):
-    pass
+def import_key(ctx, file_path):
+    try:
+        key_data = Path(file_path).open().read()
+        res = ctx.parent.gpg.import_key(key_data=key_data)
+    except FileNotFoundError:
+        logging.error('The file path is wrong. File not found.')
+        return
+    except OSError:
+        logging.error('Cannot read the file.')
+        return
+        pass
+
+    logging.info(f"Successful import {res.get('imported')} keys.\nThe fingerprint is:\n{res.get('success')[0].get('fingerprint')}")
 
 
 client.add_command(create_key)

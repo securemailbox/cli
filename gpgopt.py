@@ -26,26 +26,13 @@ class GpgOpt():
         self.logger.info('Initialize GnuPG successful.')
 
 
-    def import_key(self, path):
+    def import_key(self, key_data):
         """Check whether the gnupg pub or pvt key already exist.
 
         If exist, import it, if not, return false.
         """
-        try:
-            path = Path(path)
-            key_data = path.open().read()
-        except FileNotFoundError:
-            logging.error('The file path is wrong. File not found.')
-            return False
-        except OSError:
-            logging.error('Cannot read the file.')
-            return False
-        finally:
-            return False
-            pass
-
         result = self.gpg.import_keys(key_data=key_data)
-        return result.imported, result.counts
+        return {'success': result.results, 'imported': result.imported, 'counts': result.counts}
 
 
     def create(self, password, name, email, key_type, key_length, expire_date):
