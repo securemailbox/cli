@@ -1,0 +1,16 @@
+# Ignore all files
+*
+
+# License and environment files
+!LICENSE
+!Makefile
+!Pipfile
+!Pipfile.lock
+!README.md
+!.gitignore
+
+# Program files
+!gpgopt.py
+!scmail.py
+!app.py
+!cli.py
