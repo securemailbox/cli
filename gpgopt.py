@@ -55,10 +55,10 @@ class GpgOpt():
         # all parameters that user can choose.
         input_data = self.gpg.gen_key_input(
             name_real=name,
-            name_email=email, 
-            key_type=key_type, 
+            name_email=email,
+            key_type=key_type,
             passphrase=password,
-            key_length=key_length, 
+            key_length=key_length,
             expire_date=expire_date)
 
         # generate key pair
@@ -81,6 +81,11 @@ class GpgOpt():
         return self.gpg.list_keys(secret=sec)
 
 
+    def scan_file(self, file_path):
+        """Scan the keys in a file."""
+        return self.gpg.scan_keys(file_path)
+
+
     def encrypt_message(self, message, recipient):
         """Encrypt the message and return the encrypted message.
 
@@ -88,7 +93,7 @@ class GpgOpt():
 
         email: string, email of recipient.
         """
-        msg = self.gpg.encrypt(message, recipient)
+        msg = self.gpg.encrypt(message, recipient, always_trust=True)
         return (True, msg.data) if msg.ok else (False, msg.stderr)
 
 
@@ -100,20 +105,24 @@ class GpgOpt():
         passphrase: string, passphrase of the private key.
         """
         msgs = []
+        tag = True
+
         if messages is None:
             msgs = ['No message.']
             return (True, msgs)
+
         for message in messages:
             msg = self.gpg.decrypt(message=message, passphrase=passphrase)
             if msg.ok is False:
                 msgs.append(msg.stderr)
-                return (False, msgs)
+                tag = False
             msgs.append(msg.data)
-        return (True, msgs)
+
+        return (tag, msgs)
 
 
 if __name__ == "__main__":
-    mygpg = GpgOpt(mygnupghome='gnupgkeys', email=getpass.getuser())
+    mygpg = GpgOpt(mygnupghome='gnupgkeys')
     LOG_TIME_FORMAT = time.strftime("%Y%m%d%H%M%S",time.localtime())
     LOGGING_LEVEL = logging.DEBUG
     logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s',
