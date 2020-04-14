@@ -92,8 +92,7 @@ def set_user_info(ctx, gnupghome):
 @click.pass_context
 def create_key(ctx, name, email, key_type, key_length, expire_date, password):
     """Create gnupg key pairs."""
-    logging.debug(f'Information about key:\nName: {name}\nEmail: {email}\n\
-                  key type: {key_type}\nkey length: {key_length}\nexpire date: {expire_date}\n')
+    logging.debug(f'Information about key:\nName: {name}\nEmail: {email}\nkey type: {key_type}\nkey length: {key_length}\nexpire date: {expire_date}\n')
 
     # Warning if key never expire and user want to continue.
     if expire_date == 0 and not click.confirm('0 means never expire, Do you want to continue?'):
@@ -166,8 +165,7 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
     if r.status_code == 200:
         logging.info('The message retrieve successful.')
     else:
-        logging.error(f'The message retrieve fail.\n\
-                      Error {r.status_code} is: {res.get("error")}')
+        logging.error(f'The message retrieve fail.\nError {r.status_code} is: {res.get("error")}')
         return
 
     # load messages.
@@ -283,12 +281,11 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
 def import_key(ctx, file_path, fingerprint):
     # scaning key
     key_data = Path(file_path)
-    try:
-        res = ctx.parent.gpg.scan_file(file_path)
-    except FileNotFoundError:
-        logging.error('The file path is wrong. File not found.')
+    res = ctx.parent.gpg.scan_file(file_path)
+
+    if res == []:
+        logging.error('The file path is wrong. File not found. Or No key (pair) in this file.')
         return
-        pass
 
     if (fingerprint != res[0].get('fingerprint')):
         logging.error('Unsafe Key.\nThe user input fingerprint is different from computed fingerprint.')
@@ -304,8 +301,7 @@ def import_key(ctx, file_path, fingerprint):
         return
         pass
 
-    logging.info(f"Successful import {res.get('imported')} keys.\n\
-                 The fingerprint is:\n{res.get('success')[0].get('fingerprint')}")
+    logging.info(f"Successful import {res.get('imported')} keys.\nThe fingerprint is:\n{res.get('success')[0].get('fingerprint')}")
 
 
 client.add_command(create_key)
