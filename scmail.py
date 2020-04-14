@@ -177,11 +177,13 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
 
     # Decrypt the messages.
     ok, messages = ctx.parent.gpg.decrypt_message(messages=res.get('error'), passphrase=password)
-    ctx.parent.pp.pprint(messages)
+    logging.debug(messages)
 
     # Print all message.
     for m in messages:
         all_messages[messages.index(m)]['message'] = m
+
+    ctx.parent.pp.pprint(all_messages)
 
     if ok is False:
         logging.error(f'Some messages decrypt fail.')
