@@ -107,7 +107,7 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
 
 @click.command()
 @click.option('--private', '-p', prompt='Do you want to show the private keys?',
-              default=False, type=bool, help='Whether show the private keys')
+              default=False, type=bool, is_flag=True, help='Whether show the private keys')
 @click.pass_context
 def list_keys(ctx, private):
     """List and print all the keys in the gnupg home dir."""
@@ -225,9 +225,9 @@ def send(ctx, sender_fingerprint, recipient, message):
 @click.option('--fingerprint', prompt='Enter the fingerprint of that key',
               required=True, type=str, help='The fingerprint of exported key.')
 @click.option('--is-file', prompt='Do you want to store keys to file (or print)?',
-              type=bool, help='Whether export to file.')
+              type=bool, is_flag=True, help='Whether export to file.')
 @click.option('--is-pvt', prompt='Do you want to export private key?',
-              type=bool, help='Whether export private keys.')
+              type=bool, is_flag=True, help='Whether export private keys.')
 @click.pass_context
 def export_key(ctx, fingerprint, is_file, is_pvt):
     file_name = None
