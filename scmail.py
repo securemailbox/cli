@@ -170,7 +170,7 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
 
     # load messages.
     logging.debug(f'response is: {res}')
-    all_messages = res.get('messages')
+    all_messages = res.get('data').get('messages')
     logging.debug([message.get('message') for message in all_messages])
 
     # Decrypt the messages.
