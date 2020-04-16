@@ -135,17 +135,17 @@ def register(ctx, fingerprint):
 
 @click.command()
 @click.option('--fingerprint', '-f', prompt='Enter fingerprint of mailbox', required=True, help='The fingerprint of the yourself mailbox.')
-@click.option('--sender-fingerprint', '-s', prompt='Enter the fingerprint of sender', default=None, help='The senders fingerprint.')
+@click.option('--sender-fingerprint', '-s', prompt='Enter the fingerprint of sender', default='', help='The senders fingerprint.')
 @click.password_option('--password', '-p', prompt='Enter password of private key', help='The passphrase of private key')
 @click.pass_context
 def retrieve(ctx, fingerprint, sender_fingerprint, password):
     """Retrieve and Post messages from API"""
     logging.debug(fingerprint, sender_fingerprint)
-    data = {'fingerprint': fingerprint}
-    if not sender_fingerprint:
-        data.update(sender_fingerprint, sender_fingerprint)
+    payload = {'fingerprint': fingerprint}
+    if sender_fingerprint:
+        payload.update({'sender_fingerprint': sender_fingerprint})
     # Retrieve
-    r = requests.post(SECUREMAILBOX_URL + '/retrieve/', json=data)
+    r = requests.post(SECUREMAILBOX_URL + '/retrieve/', json=payload)
     res = r.json()
     logging.debug(f'response is: {res}')
 
