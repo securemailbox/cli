@@ -154,9 +154,9 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
     """Retrieve and Post messages from API"""
     # Prepare send data.
     logging.debug(fingerprint, sender_fingerprint)
-    data = {'fingerprint': fingerprint}
-    if sender_fingerprint == '':
-        data.update(sender_fingerprint, sender_fingerprint)
+    payload = {'fingerprint': fingerprint}
+    if sender_fingerprint:
+        payload.update({'sender_fingerprint': sender_fingerprint})
 
     # Retrieve from api.
     r = requests.post(SECUREMAILBOX_URL + '/retrieve/', json=data)
