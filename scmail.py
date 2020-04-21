@@ -159,7 +159,7 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
         payload.update({'sender_fingerprint': sender_fingerprint})
 
     # Retrieve from api.
-    r = requests.post(SECUREMAILBOX_URL + '/retrieve/', json=data)
+    r = requests.post(SECUREMAILBOX_URL + '/retrieve/', json=payload)
     res = r.json()
 
     if r.status_code == 200:
@@ -170,18 +170,17 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
 
     # load messages.
     logging.debug(f'response is: {res}')
+    # all messages should be a list of message come from api.
     all_messages = res.get('data').get('messages')
-    logging.debug([message.get('message') for message in all_messages])
+    all_messages = [message.get('message') for message in all_messages]
+    logging.debug(all_messages)
 
     # Decrypt the messages.
-    ok, messages = ctx.parent.gpg.decrypt_message(messages=res.get('error'), passphrase=password)
+    ok, messages = ctx.parent.gpg.decrypt_message(messages=all_messages, passphrase=password)
     logging.debug(messages)
 
     # Print all message.
-    for m in messages:
-        all_messages[messages.index(m)]['message'] = m
-
-    ctx.parent.pp.pprint(all_messages)
+    ctx.parent.pp.pprint(messages)
 
     if ok is False:
         logging.error(f'Some messages decrypt fail.')
@@ -280,21 +279,20 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
 @click.pass_context
 def import_key(ctx, file_path, fingerprint):
     # scaning key
-    key_data = Path(file_path)
     res = ctx.parent.gpg.scan_file(file_path)
 
     if res == []:
         logging.error('The file path is wrong. File not found. Or No key (pair) in this file.')
         return
 
-    if (fingerprint != res[0].get('fingerprint')):
+    if fingerprint != res[0].get('fingerprint'):
         logging.error('Unsafe Key.\nThe user input fingerprint is different from computed fingerprint.')
         logging.error('Mail Client Exits.')
         return
 
     # import key
     try:
-        key_data = key_data.open().read()
+        key_data = Path(file_path).open().read()
         res = ctx.parent.gpg.import_key(key_data=key_data)
     except OSError:
         logging.error('Cannot read the file.')
