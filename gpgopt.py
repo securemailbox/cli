@@ -107,7 +107,7 @@ class GpgOpt():
         msgs = []
         tag = True
 
-        if messages is None:
+        if not messages:
             msgs = ['No message.']
             return (True, msgs)
 
