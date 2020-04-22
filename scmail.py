@@ -211,7 +211,7 @@ def send(ctx, sender_fingerprint, recipient, message):
         logging.info('Message encrypt success.')
 
     # Send
-    payload = {'fingerprint': recipient, 'message': message, 'sender_fingerprint': sender_fingerprint}
+    payload = {'fingerprint': recipient, 'message': encrypted_message.decode(), 'sender_fingerprint': sender_fingerprint}
     r = requests.post(SECUREMAILBOX_URL + '/send/', json=payload)
 
     if r.status_code == 200:
