@@ -5,12 +5,17 @@ import re
 from pathlib import Path
 from os import environ
 import getpass
-from gpgopt import GpgOpt
 import logging
 import time
 
+
+if __name__ != '__main__':
+    from scmailclient.gpgopt import GpgOpt
+else:
+    from gpgopt import GpgOpt
+
 # Default to localhost if url is not given
-SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "http://127.0.0.1:8080")
+SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "http://0.0.0.0:8080")
 
 # Logging Level
 LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.DEBUG)
@@ -76,7 +81,7 @@ def set_user_info(ctx, gnupghome):
     return gnupghome
 
 
-@click.command()
+@click.command(name='create')
 @click.option('--name', '-n', prompt='Enter Name',
               default=getpass.getuser(), type=str, help='Generator name.')
 @click.option('--email', '-e', prompt='Enter Email',
@@ -87,7 +92,7 @@ def set_user_info(ctx, gnupghome):
               default=1024, type=int, help='The length of the key.')
 @click.option('--expire-date', '-d', prompt='Enter expire date', default="2y",
               type=str, help='The expire time of the key pair. 0 or empty for never expire.')
-@click.password_option('--password', '-p', prompt='Enter private key password',
+@click.password_option('--password', '-p', prompt='Enter private key password', type=str,
                        help='Password of private key.')
 @click.pass_context
 def create_key(ctx, name, email, key_type, key_length, expire_date, password):
@@ -102,7 +107,8 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
                                 key_type=key_type, key_length=key_length,
                                 expire_date=expire_date)
     ctx.parent.pp.pprint(key.__dict__)
-    logging.info('Key Creation finished.')
+    logging.info(f"Key Creation finished.\nFingerprint is {key.fingerprint}.")
+    return key.fingerprint
 
 
 @click.command()
@@ -146,7 +152,7 @@ def register(ctx, fingerprint):
 @click.option('--fingerprint', '-f', prompt='Enter fingerprint of mailbox',
               required=True, type=str, help='The fingerprint of the yourself mailbox.')
 @click.option('--sender-fingerprint', '-s', prompt='Enter the fingerprint of sender',
-              type=str, help='The senders fingerprint.')
+              required=False, default='', type=str, help='The senders fingerprint.')
 @click.password_option('--password', '-p', prompt='Enter password of private key',
                        help='The passphrase of private key')
 @click.pass_context
@@ -155,7 +161,7 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
     # Prepare send data.
     logging.debug(fingerprint, sender_fingerprint)
     data = {'fingerprint': fingerprint}
-    if sender_fingerprint == '':
+    if sender_fingerprint:
         data.update(sender_fingerprint, sender_fingerprint)
 
     # Retrieve from api.
@@ -204,6 +210,10 @@ def send(ctx, sender_fingerprint, recipient, message):
 
     message: the messages.
     """
+    if not check_fingerprint(sender_fingerprint) or not check_fingerprint(recipient):
+        logging.error('The length of fingerprint is not a valid length.')
+        return
+
     # Choose recipient and Encrypted
     ok, encrypted_message = ctx.parent.gpg.encrypt_message(message, recipient)
     if ok is False:
@@ -213,6 +223,7 @@ def send(ctx, sender_fingerprint, recipient, message):
 
     # Send
     payload = {'fingerprint': recipient, 'message': message, 'sender_fingerprint': sender_fingerprint}
+    print(payload)
     r = requests.post(SECUREMAILBOX_URL + '/send/', json=payload)
 
     if r.status_code == 200:
@@ -302,6 +313,10 @@ def import_key(ctx, file_path, fingerprint):
         pass
 
     logging.info(f"Successful import {res.get('imported')} keys.\nThe fingerprint is:\n{res.get('success')[0].get('fingerprint')}")
+
+
+def check_fingerprint(fingerprint):
+    return True if isinstance(fingerprint, str) and len(fingerprint) == 40 else False
 
 
 client.add_command(create_key)

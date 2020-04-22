@@ -4,8 +4,9 @@ from random import randint
 import logging
 
 # For Testing
-import time
-import getpass
+if __name__ == '__main__':
+    import time
+    import getpass
 
 
 class GpgOpt():
@@ -124,15 +125,22 @@ class GpgOpt():
 if __name__ == "__main__":
     mygpg = GpgOpt(mygnupghome='gnupgkeys')
     LOG_TIME_FORMAT = time.strftime("%Y%m%d%H%M%S",time.localtime())
-    LOGGING_LEVEL = logging.DEBUG
-    logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        level=LOGGING_LEVEL,
-        handlers=[
-            logging.FileHandler(filename=Path('log', LOG_TIME_FORMAT)),
-            logging.StreamHandler()
-        ]
-    )
+
+    # LOGGING_LEVEL = logging.DEBUG
+    # logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s',
+        # level=LOGGING_LEVEL,
+        # handlers=[
+            # logging.FileHandler(filename=Path('log', LOG_TIME_FORMAT)),
+            # logging.StreamHandler()
+        # ]
+    # )
+
     # Test import key
-    path = 'b'
-    res = mygpg.import_key(path=path)
+    # path = 'b'
+    # res = mygpg.import_key(path=path)
+    # print(res)
+
+    # test create key
+    res = mygpg.create('1', 'f', 'e', 'RSA', '1024', '2y')
     print(res)
+
