@@ -2,6 +2,7 @@ import pytest
 import sys
 sys.path.append('../')
 from scmailclient import scmail
+from helper import create_key
 
 
 '''
@@ -24,8 +25,7 @@ NORMAL_FINGERPRINT = 'FAC10F0C3D1D49F8F9A82CB553E79F7C92E1CF33'
 @pytest.mark.finished
 @pytest.mark.parametrize('fingerprint',
                          ['shortafingerprint',
-                          'longafingerprintfdjlaeiemalmcklaeiojr243232l3kjl34j2',
-                          'FAC10F0C3D1D49F8F9A82CB553E79F7C92E1CF33'])
+                          'longafingerprintfdjlaeiemalmcklaeiojr243232l3kjl34j2'])
 def test_fingerprint_length(caplog, runner, fingerprint):
     runner.invoke(scmail.client, ['register', '-f', fingerprint])
 
@@ -37,7 +37,11 @@ def test_fingerprint_length(caplog, runner, fingerprint):
 
 @pytest.mark.finished
 def test_fingerprint_exists(caplog, runner):
-    runner.invoke(scmail.client, ['register', '-f', NORMAL_FINGERPRINT])
+    fingerprint = create_key(runner)
+    runner.invoke(scmail.client, ['register', '-f', fingerprint])
+    caplog.clear()
+
+    runner.invoke(scmail.client, ['register', '-f', fingerprint])
 
     assert 'already exists' in caplog.text
 

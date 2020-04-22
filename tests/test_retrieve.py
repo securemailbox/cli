@@ -28,8 +28,8 @@ def send(caplog, runner, sender, recipient, message):
 @pytest.mark.finished
 def test_no_sender(caplog, runner):
     fingerprint, sender = create_two(runner)
-    register(runner, fingerprint)
-    register(runner, sender)
+    register(caplog, runner, fingerprint)
+    register(caplog, runner, sender)
 
     # send message
     message = 'come from test_no_sender.'
@@ -46,8 +46,8 @@ def test_no_sender(caplog, runner):
 @pytest.mark.finished
 def test_no_message(caplog, runner):
     fingerprint, sender = create_two(runner)
-    register(runner, fingerprint)
-    register(runner, sender)
+    register(caplog, runner, fingerprint)
+    register(caplog, runner, sender)
 
     # retrieve
     caplog.set_level(10)
@@ -60,8 +60,8 @@ def test_no_message(caplog, runner):
 @pytest.mark.finished
 def test_one_message(caplog, runner):
     fingerprint, sender = create_two(runner)
-    register(runner, fingerprint)
-    register(runner, sender)
+    register(caplog, runner, fingerprint)
+    register(caplog, runner, sender)
 
     # send
     message = 'come from test_one_message'
@@ -78,8 +78,8 @@ def test_one_message(caplog, runner):
 @pytest.mark.finished
 def test_multiple_messages(caplog, runner):
     fingerprint, sender = create_two(runner)
-    register(runner, fingerprint)
-    register(runner, sender)
+    register(caplog, runner, fingerprint)
+    register(caplog, runner, sender)
 
     # send
     messages = ['first message', 'second message', 'third message', 'multiple message']

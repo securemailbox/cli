@@ -59,7 +59,6 @@ def test_sender_no_register(caplog, runner):
 @pytest.mark.finished
 def test_message(caplog, runner):
     """Special character"""
-    caplog.set_level(10)
     sender, recipient = create_two(runner)
 
     # register two
@@ -67,6 +66,7 @@ def test_message(caplog, runner):
     register(caplog, runner, recipient)
 
     # special character.
+    caplog.set_level(10)
     runner.invoke(scmail.client, ['send', '-s', sender, '-r', recipient, '-m', f'come from test_message. Testing special character.\nand\tand\\and\'\"'])
     assert 'Sending message success.' in caplog.text
 

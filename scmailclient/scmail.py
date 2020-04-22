@@ -20,7 +20,16 @@ SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "http://0.0.0.0:8080")
 # Logging Level
 LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.DEBUG)
 
-@click.group()
+
+def check_fingerprint(ctx, param, value):
+    # in normal case or it is optional.
+    if len(value) == 40 or not value:
+        return value
+    logging.error('The length of fingerprint is not a valid length.')
+    ctx.exit(1)
+
+
+@click.group(chain=True)
 @click.pass_context
 def client(ctx):
     """Initial client."""
@@ -111,7 +120,7 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
     return key.fingerprint
 
 
-@click.command()
+@click.command(name='list')
 @click.option('--private', '-p', prompt='Do you want to show the private keys?',
               default=False, type=bool, is_flag=True, help='Whether show the private keys')
 @click.pass_context
@@ -126,13 +135,13 @@ def list_keys(ctx, private):
 
 
 @click.command()
-@click.option('--fingerprint', '-f', prompt='Register fingerprint',
+@click.option('--fingerprint', '-f', prompt='Register fingerprint', callback=check_fingerprint,
               required=True, type=str, help='The fingerprint used to register.')
 @click.pass_context
 def register(ctx, fingerprint):
     """Register scmail API."""
     # Request register.
-    logging.debug('begin register.')
+    logging.info('begin register.')
     logging.debug(f'Getting fingerprint: {fingerprint}')
     data = {'fingerprint': fingerprint}
 
@@ -149,9 +158,9 @@ def register(ctx, fingerprint):
 
 
 @click.command()
-@click.option('--fingerprint', '-f', prompt='Enter fingerprint of mailbox',
+@click.option('--fingerprint', '-f', prompt='Enter fingerprint of mailbox', callback=check_fingerprint,
               required=True, type=str, help='The fingerprint of the yourself mailbox.')
-@click.option('--sender-fingerprint', '-s', prompt='Enter the fingerprint of sender',
+@click.option('--sender-fingerprint', '-s', prompt='Enter the fingerprint of sender', callback=check_fingerprint,
               required=False, default='', type=str, help='The senders fingerprint.')
 @click.password_option('--password', '-p', prompt='Enter password of private key',
                        help='The passphrase of private key')
@@ -183,7 +192,6 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
 
     # Decrypt the messages.
     ok, messages = ctx.parent.gpg.decrypt_message(messages=all_messages, passphrase=password)
-    # messages = [message.decode() for message in messages]
     logging.debug(messages)
 
     # Print all message.
@@ -196,9 +204,9 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
 
 
 @click.command()
-@click.option('--sender-fingerprint', '-s', prompt='The sender fingerprint',
+@click.option('--sender-fingerprint', '-s', prompt='The sender fingerprint', callback=check_fingerprint,
               required=True, type=str, help='The fingerprint of the sender.')
-@click.option('--recipient', '-r', prompt='The recipient fingerprint',
+@click.option('--recipient', '-r', prompt='The recipient fingerprint', callback=check_fingerprint,
               required=True, type=str, help='The fingerprint of the recipient.')
 @click.option('--message', '-m', required=True, prompt='The message',
               type=str, help='Message that will send.')
@@ -210,10 +218,6 @@ def send(ctx, sender_fingerprint, recipient, message):
 
     message: the messages.
     """
-    if not check_fingerprint(sender_fingerprint) or not check_fingerprint(recipient):
-        logging.error('The length of fingerprint is not a valid length.')
-        return
-
     # Choose recipient and Encrypted
     ok, encrypted_message = ctx.parent.gpg.encrypt_message(message, recipient)
     if ok is False:
@@ -231,8 +235,8 @@ def send(ctx, sender_fingerprint, recipient, message):
         logging.error(f'Sending message fail.\nError {r.status_code} is: {r.json().get("error")}')
 
 
-@click.command()
-@click.option('--fingerprint', prompt='Enter the fingerprint of that key',
+@click.command(name='export')
+@click.option('--fingerprint', prompt='Enter the fingerprint of that key', callback=check_fingerprint,
               required=True, type=str, help='The fingerprint of exported key.')
 @click.option('--is-file', prompt='Do you want to store keys to file (or print)?',
               type=bool, is_flag=True, help='Whether export to file.')
@@ -282,10 +286,10 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
     logging.info('Export key successful.')
 
 
-@click.command()
+@click.command(name='import')
 @click.option('--file-path', '-p', prompt='Enter file path', required=True,
               type=str, help='The path of imported key.')
-@click.option('--fingerprint', '-f', prompt='Enter fingerprint', required=True,
+@click.option('--fingerprint', '-f', prompt='Enter fingerprint', required=True, callback=check_fingerprint,
               type=str, help='The fingerprint of this key/key pair.')
 @click.pass_context
 def import_key(ctx, file_path, fingerprint):
@@ -311,10 +315,6 @@ def import_key(ctx, file_path, fingerprint):
         pass
 
     logging.info(f"Successful import {res.get('imported')} keys.\nThe fingerprint is:\n{res.get('success')[0].get('fingerprint')}")
-
-
-def check_fingerprint(fingerprint):
-    return True if isinstance(fingerprint, str) and len(fingerprint) == 40 else False
 
 
 client.add_command(create_key)
