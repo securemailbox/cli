@@ -20,10 +20,7 @@ def create_two(runner):
     return sender_fingerprint, recipient_fingerprint
 
 
-def register(caplog, runner, fingerprint):
+def register(runner, fingerprint):
     """register for one key."""
-    caplog.set_level(10)
     result = runner.invoke(scmail.client, ['register', '-f', fingerprint])
-    assert 'Registration success.' in caplog.text
-    caplog.clear()
 

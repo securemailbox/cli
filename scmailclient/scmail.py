@@ -6,6 +6,7 @@ from os import environ
 import getpass
 import logging
 import time
+import requests
 
 
 if __name__ != '__main__':
@@ -182,6 +183,7 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
 
     # Decrypt the messages.
     ok, messages = ctx.parent.gpg.decrypt_message(messages=all_messages, passphrase=password)
+    # messages = [message.decode() for message in messages]
     logging.debug(messages)
 
     # Print all message.
@@ -190,7 +192,7 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
     if ok is False:
         logging.error(f'Some messages decrypt fail.')
     else:
-        logging.info('Decrypt message successful.')
+        logging.info(f'Decrypt {len(messages)} message successful.')
 
 
 @click.command()
