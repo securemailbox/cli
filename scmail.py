@@ -77,12 +77,18 @@ def set_user_info(ctx, gnupghome):
 
 
 @click.command()
-@click.option('--name', '-n', prompt='Enter Name', default=getpass.getuser(), help='Generator name.')
-@click.option('--email', '-e', prompt='Enter Email', default=f'{getpass.getuser()}@scmail.dev', help='The user email address.')
-@click.option('--key-type', '-t', prompt='Enter key type', default="RSA", help='The algorithms to generate the key. ex. RSA')
-@click.option('--key-length', '-l', prompt='Enter key length', default=1024, help='The length of the key.')
-@click.option('--expire-date', '-d', prompt='Enter expire date', default="2y", help='The expire time of the key pair. 0 or empty for never expire.')
-@click.password_option('--password', '-p', prompt='Enter private key password', help='Password of private key.')
+@click.option('--name', '-n', prompt='Enter Name',
+              default=getpass.getuser(), type=str, help='Generator name.')
+@click.option('--email', '-e', prompt='Enter Email',
+              default=f'{getpass.getuser()}@scmail.dev', type=str, help='The user email address.')
+@click.option('--key-type', '-t', prompt='Enter key type',
+              default="RSA", type=str, help='The algorithms to generate the key. ex. RSA')
+@click.option('--key-length', '-l', prompt='Enter key length',
+              default=1024, type=int, help='The length of the key.')
+@click.option('--expire-date', '-d', prompt='Enter expire date', default="2y",
+              type=str, help='The expire time of the key pair. 0 or empty for never expire.')
+@click.password_option('--password', '-p', prompt='Enter private key password',
+                       help='Password of private key.')
 @click.pass_context
 def create_key(ctx, name, email, key_type, key_length, expire_date, password):
     """Create gnupg key pairs."""
@@ -92,19 +98,21 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
     if expire_date == 0 and not click.confirm('0 means never expire, Do you want to continue?'):
         logging.warning('Never expire key will be created.')
 
-    key = ctx.parent.gpg.create(password=password, name=name, email=email, key_type=key_type, key_length=key_length, expire_date=expire_date)
+    key = ctx.parent.gpg.create(password=password, name=name, email=email,
+                                key_type=key_type, key_length=key_length,
+                                expire_date=expire_date)
     ctx.parent.pp.pprint(key.__dict__)
     logging.info('Key Creation finished.')
 
 
 @click.command()
-@click.option('--show-private', '-s', prompt='Do you want to show the private keys?', default=False, is_flag=True,
-              help='Whether show the private keys')
+@click.option('--private', '-p', prompt='Do you want to show the private keys?',
+              default=False, type=bool, is_flag=True, help='Whether show the private keys')
 @click.pass_context
-def list_keys(ctx, show_private):
+def list_keys(ctx, private):
     """List and print all the keys in the gnupg home dir."""
-    keys = ctx.parent.gpg.list_keys(show_private)
-    key_type = 'public' if show_private is False else 'private'
+    keys = ctx.parent.gpg.list_keys(private)
+    key_type = 'public' if private is False else 'private'
 
     logging.info(f'{len(keys)} {key_type} keys exist.')
     ctx.parent.pp.pprint(keys.__dict__)
@@ -112,7 +120,8 @@ def list_keys(ctx, show_private):
 
 
 @click.command()
-@click.option('--fingerprint', '-f', prompt='Register fingerprint', required=True, help='The fingerprint used to register.')
+@click.option('--fingerprint', '-f', prompt='Register fingerprint',
+              required=True, type=str, help='The fingerprint used to register.')
 @click.pass_context
 def register(ctx, fingerprint):
     """Register scmail API."""
@@ -134,20 +143,24 @@ def register(ctx, fingerprint):
 
 
 @click.command()
-@click.option('--fingerprint', '-f', prompt='Enter fingerprint of mailbox', required=True, help='The fingerprint of the yourself mailbox.')
-@click.option('--sender-fingerprint', '-s', prompt='Enter the fingerprint of sender', default='', help='The senders fingerprint.')
-@click.password_option('--password', '-p', prompt='Enter password of private key', help='The passphrase of private key')
+@click.option('--fingerprint', '-f', prompt='Enter fingerprint of mailbox',
+              required=True, type=str, help='The fingerprint of the yourself mailbox.')
+@click.option('--sender-fingerprint', '-s', prompt='Enter the fingerprint of sender',
+              default='', type=str, help='The senders fingerprint.')
+@click.password_option('--password', '-p', prompt='Enter password of private key',
+                       help='The passphrase of private key')
 @click.pass_context
 def retrieve(ctx, fingerprint, sender_fingerprint, password):
     """Retrieve and Post messages from API"""
+    # Prepare send data.
     logging.debug(fingerprint, sender_fingerprint)
     payload = {'fingerprint': fingerprint}
     if sender_fingerprint:
         payload.update({'sender_fingerprint': sender_fingerprint})
-    # Retrieve
+
+    # Retrieve from api.
     r = requests.post(SECUREMAILBOX_URL + '/retrieve/', json=payload)
     res = r.json()
-    logging.debug(f'response is: {res}')
 
     if r.status_code == 200:
         logging.info('The message retrieve successful.')
@@ -155,21 +168,35 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
         logging.error(f'The message retrieve fail.\nError {r.status_code} is: {res.get("error")}')
         return
 
+    # load messages.
+    logging.debug(f'response is: {res}')
+    # all messages should be a list of message come from api.
+    all_messages = res.get('data').get('messages')
+    all_messages = [message.get('message') for message in all_messages]
+    logging.debug(all_messages)
+
     # Decrypt the messages.
-    ok, messages = ctx.parent.gpg.decrypt_message(messages=res.get('error'), passphrase=password)
-    ctx.parent.pp.pprint(messages[:-1])
+    ok, messages = ctx.parent.gpg.decrypt_message(messages=all_messages, passphrase=password)
+    logging.debug(messages)
+
+    # Print all message.
+    ctx.parent.pp.pprint(messages)
+
     if ok is False:
-        logging.error(f'Other message decrypt fail.\n{messages[-1]}')
+        logging.error(f'Some messages decrypt fail.')
     else:
-        ctx.parent.pp.pprint(messages[-1])
         logging.info('Decrypt message successful.')
 
 
 @click.command()
-@click.option('--recipient', '-r', prompt='The recipient fingerprint', required=True, help='The fingerprint of the recipient.')
-@click.option('--message', '-m', required=True, prompt='The message', help='Message that will send.')
+@click.option('--sender-fingerprint', '-s', prompt='The sender fingerprint',
+              required=True, type=str, help='The fingerprint of the sender.')
+@click.option('--recipient', '-r', prompt='The recipient fingerprint',
+              required=True, type=str, help='The fingerprint of the recipient.')
+@click.option('--message', '-m', required=True, prompt='The message',
+              type=str, help='Message that will send.')
 @click.pass_context
-def send(ctx, recipient, message):
+def send(ctx, sender_fingerprint, recipient, message):
     """Send a message.
 
     recipient: the fingerprint of recipient
@@ -184,7 +211,7 @@ def send(ctx, recipient, message):
         logging.info('Message encrypt success.')
 
     # Send
-    payload = {'fingerprint': recipient, 'message': message}
+    payload = {'fingerprint': recipient, 'message': encrypted_message.decode(), 'sender_fingerprint': sender_fingerprint}
     r = requests.post(SECUREMAILBOX_URL + '/send/', json=payload)
 
     if r.status_code == 200:
@@ -194,9 +221,12 @@ def send(ctx, recipient, message):
 
 
 @click.command()
-@click.option('--fingerprint', prompt='Enter the fingerprint of that key', required=True, help='The fingerprint of exported key.')
-@click.option('--is-file', prompt='Do you want to store keys to file (or print)?', is_flag=True, help='Whether export to file.')
-@click.option('--is-pvt', prompt='Do you want to export private key?', is_flag=True, help='Whether export private keys.')
+@click.option('--fingerprint', prompt='Enter the fingerprint of that key',
+              required=True, type=str, help='The fingerprint of exported key.')
+@click.option('--is-file', prompt='Do you want to store keys to file (or print)?',
+              type=bool, is_flag=True, help='Whether export to file.')
+@click.option('--is-pvt', prompt='Do you want to export private key?',
+              type=bool, is_flag=True, help='Whether export private keys.')
 @click.pass_context
 def export_key(ctx, fingerprint, is_file, is_pvt):
     file_name = None
@@ -210,10 +240,10 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
             logging.debug('file not exists.')
         except FileExistsError:
             logging.error('Cause the path already exist, export to file failed.')
-            logging.warning('Mail Client Exit.')
             if click.confirm('Do you want to print on console?', default=True):
                 is_file = False
             else:
+                logging.warning('Mail Client Exit.')
                 return
 
             pass
@@ -223,6 +253,11 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
 
     pub, pvt = ctx.parent.gpg.export_key(fingerprint, export_pvt=is_pvt, password=passphrase)
 
+    if pub == '':
+        logging.error('The key not exists, please check fingerprint.')
+        logging.error('Mail Client Exits.')
+        return
+
     if is_file is False:
         ctx.parent.pp.pprint(pub)
         if is_pvt is True:
@@ -230,21 +265,35 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
     else:
         with file_name.open('w') as f:
             f.write(pub)
-            f.write(pvt)
+            if pvt:
+                f.write(pvt)
 
     logging.info('Export key successful.')
 
 
 @click.command()
-@click.option('--file-path', '-p', prompt='Enter file path', required=True, help='The path of imported key.')
+@click.option('--file-path', '-p', prompt='Enter file path', required=True,
+              type=str, help='The path of imported key.')
+@click.option('--fingerprint', '-f', prompt='Enter fingerprint', required=True,
+              type=str, help='The fingerprint of this key/key pair.')
 @click.pass_context
-def import_key(ctx, file_path):
+def import_key(ctx, file_path, fingerprint):
+    # scaning key
+    res = ctx.parent.gpg.scan_file(file_path)
+
+    if res == []:
+        logging.error('The file path is wrong. File not found. Or No key (pair) in this file.')
+        return
+
+    if fingerprint != res[0].get('fingerprint'):
+        logging.error('Unsafe Key.\nThe user input fingerprint is different from computed fingerprint.')
+        logging.error('Mail Client Exits.')
+        return
+
+    # import key
     try:
         key_data = Path(file_path).open().read()
         res = ctx.parent.gpg.import_key(key_data=key_data)
-    except FileNotFoundError:
-        logging.error('The file path is wrong. File not found.')
-        return
     except OSError:
         logging.error('Cannot read the file.')
         return
