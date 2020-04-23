@@ -146,7 +146,7 @@ def register(ctx, fingerprint):
 @click.option('--fingerprint', '-f', prompt='Enter fingerprint of mailbox',
               required=True, type=str, help='The fingerprint of the yourself mailbox.')
 @click.option('--sender-fingerprint', '-s', prompt='Enter the fingerprint of sender',
-              type=str, help='The senders fingerprint.')
+              default='', type=str, help='The senders fingerprint.')
 @click.password_option('--password', '-p', prompt='Enter password of private key',
                        help='The passphrase of private key')
 @click.pass_context
