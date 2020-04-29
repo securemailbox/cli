@@ -1,0 +1,8 @@
+language: python
+python:
+  - "3.8"
+install:
+  - pip install --upgrade pip setuptools pipenv
+  - pipenv install
+script:
+  - pipenv run pytest

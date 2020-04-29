@@ -8,7 +8,7 @@
 !Pipfile.lock
 !README.md
 !.gitignore
-!.travis
+!.travis.yml
 
 # Program files
 !gpgopt.py
