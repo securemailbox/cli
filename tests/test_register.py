@@ -1,8 +1,5 @@
 import pytest
-import sys
-sys.path.append('../')
-from scmailclient import scmail
-from helper import create_key
+from helper import scmail, create_key
 
 
 '''
@@ -19,9 +16,6 @@ Cause click prompt not allow no fingerprint case happened, there is no test case
 '''
 
 
-NORMAL_FINGERPRINT = 'FAC10F0C3D1D49F8F9A82CB553E79F7C92E1CF33'
-
-
 @pytest.mark.finished
 @pytest.mark.parametrize('fingerprint',
                          ['shortafingerprint',
@@ -29,19 +23,19 @@ NORMAL_FINGERPRINT = 'FAC10F0C3D1D49F8F9A82CB553E79F7C92E1CF33'
 def test_fingerprint_length(caplog, runner, fingerprint):
     runner.invoke(scmail.client, ['register', '-f', fingerprint])
 
-    if fingerprint != 40:
-        assert 'not a valid length' in caplog.text
-    else:
-        assert 'Registration success' in caplog.text
+    assert 'not a valid length' in caplog.text
 
 
 @pytest.mark.finished
 def test_fingerprint_exists(caplog, runner):
     fingerprint = create_key(runner)
+    # register first time
     runner.invoke(scmail.client, ['register', '-f', fingerprint])
+    # assert 'Registration success.' in caplog.text
     caplog.clear()
 
+    # register second times.
+    caplog.set_level(10)
     runner.invoke(scmail.client, ['register', '-f', fingerprint])
-
     assert 'already exists' in caplog.text
 

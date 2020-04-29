@@ -1,8 +1,5 @@
 import pytest
-import sys
-sys.path.append('../')
-from scmailclient import scmail
-from helper import create_two, register, PASSWORD
+from helper import create_two, register, PASSWORD, send, scmail
 
 
 '''
@@ -16,13 +13,6 @@ Handle cases of retrieve:
 - multiple messages.
 -
 '''
-
-
-def send(caplog, runner, sender, recipient, message):
-    caplog.set_level(10)
-    runner.invoke(scmail.client, ['send', '-s', sender, '-r', recipient, '-m', message])
-    assert 'Sending message success.' in caplog.text
-    caplog.clear()
 
 
 @pytest.mark.finished

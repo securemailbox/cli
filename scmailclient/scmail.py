@@ -8,14 +8,14 @@ import logging
 import time
 import requests
 
+import sys
+sys.path.append('../')
 
-if __name__ != '__main__':
-    from scmailclient.gpgopt import GpgOpt
-else:
-    from gpgopt import GpgOpt
+from scmailclient.gpgopt import GpgOpt
+
 
 # Default to localhost if url is not given
-SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "http://0.0.0.0:8080")
+SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "http://securemailbox.duckdns.org:8082/")
 
 # Logging Level
 LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.DEBUG)
@@ -326,5 +326,10 @@ client.add_command(export_key)
 client.add_command(import_key)
 
 
+def main():
+    client(prog_name='scmail')
+
+
 if __name__ == '__main__':
-    client()
+    main()
+

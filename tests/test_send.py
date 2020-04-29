@@ -1,8 +1,5 @@
 import pytest
-import sys
-sys.path.append('../')
-from scmailclient import scmail
-from helper import create_two, register
+from helper import scmail, create_two, register
 
 
 '''
