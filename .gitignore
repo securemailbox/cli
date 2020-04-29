@@ -8,9 +8,13 @@
 !Pipfile.lock
 !README.md
 !.gitignore
+!.travis
 
 # Program files
 !gpgopt.py
 !scmail.py
 !app.py
 !cli.py
+
+# Testing files
+!test_app.py
