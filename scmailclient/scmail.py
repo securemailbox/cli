@@ -8,10 +8,12 @@ import logging
 import time
 import requests
 
-import sys
-sys.path.append('../')
+# import sys
+# sys.path.append('../')
 
-from scmailclient.gpgopt import GpgOpt
+
+# from scmailclient.gpgopt import GpgOpt
+from gpgopt import GpgOpt
 
 
 # Default to localhost if url is not given
@@ -185,6 +187,12 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
 
     # load messages.
     logging.debug(f'response is: {res}')
+
+    # if no message retrieve, directly return.
+    if res.get('data').get('count') == 0:
+        logging.info('Retrieve message successful. No message available.')
+        return
+
     # all messages should be a list of message come from api.
     all_messages = res.get('data').get('messages')
     all_messages = [message.get('message') for message in all_messages]

@@ -43,8 +43,7 @@ def test_no_message(caplog, runner):
     caplog.set_level(10)
     runner.invoke(scmail.client, ['retrieve', '-f', fingerprint, '-s', sender, '-p', PASSWORD])
 
-    assert ' message successful.' in caplog.text
-    assert 'No message.' in caplog.text
+    assert 'Retrieve message successful. No message available.' in caplog.text
 
 
 @pytest.mark.finished

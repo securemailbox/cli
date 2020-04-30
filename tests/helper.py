@@ -1,6 +1,6 @@
 import sys
-sys.path.append('.')
-from scmailclient import scmail
+sys.path.append('scmailclient/')
+import scmail
 import re
 
 
