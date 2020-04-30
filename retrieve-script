@@ -2,6 +2,6 @@
 
 fingerprint="E0BE5FDEAD10DBC2B0A5A43345E797DBEBBBEF75"
 senderFingerprint="19E705AF02AA47A5840ED18219C2645A1B9A3127"
-password="okay"
+password="bob"
 
 pipenv run python scmail.py retrieve -f $fingerprint -s $senderFingerprint -p $password
