@@ -8,6 +8,7 @@
 !Pipfile.lock
 !README.md
 !.gitignore
+!requirements.txt
 
 # Program files
 !tests
@@ -15,3 +16,4 @@
 !tests/pytest.ini
 !scmailclient
 !scmailclient/*.py
+
