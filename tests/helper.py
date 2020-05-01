@@ -8,15 +8,15 @@ PASSWORD = 'scmail'
 
 
 def create_key(runner, password=PASSWORD):
-    result = runner.invoke(scmail.client, ['create', '-p', PASSWORD])
+    result = runner.invoke(scmail.client, ['create', '-p', password])
     f = re.findall(r"\[GNUPG\:\] KEY_CREATED P ([A-Z0-9]+)", result.stdout_bytes.decode(), re.S)
     return f[0]
 
 
 def create_two(runner, password=PASSWORD):
     # create two new keys.
-    sender_fingerprint = create_key(runner, password=PASSWORD)
-    recipient_fingerprint = create_key(runner, password=PASSWORD)
+    sender_fingerprint = create_key(runner)
+    recipient_fingerprint = create_key(runner)
     return sender_fingerprint, recipient_fingerprint
 
 

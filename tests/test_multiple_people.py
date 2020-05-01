@@ -24,7 +24,7 @@ def test_two_people(caplog, runner):
     assert alice_message in caplog.text
     caplog.clear()
 
-    bob_message = 'Hello Bob, nice to meet you too.'
+    bob_message = 'Hello Alice, nice to meet you too.'
     send(caplog, runner, sender=bob_finger, recipient=alice_finger, message=bob_message)
     caplog.set_level(10)
     runner.invoke(scmail.client, ['retrieve', '-f', alice_finger, '-s', bob_finger, '-p', alice_p])

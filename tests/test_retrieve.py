@@ -1,5 +1,5 @@
 import pytest
-from helper import create_two, register, PASSWORD, send, scmail
+from helper import create_two, register, PASSWORD, send, scmail, create_key
 
 
 '''
@@ -62,6 +62,27 @@ def test_one_message(caplog, runner):
 
     assert 'Decrypt 1 message successful.' in caplog.text
     assert message in caplog.text
+
+
+@pytest.mark.finished
+def test_one_message_wrong_sender(caplog, runner):
+    fingerprint, sender = create_two(runner)
+    wrong_sender = create_key(runner)
+
+    # register three
+    register(caplog, runner, fingerprint)
+    register(caplog, runner, sender)
+    register(caplog, runner, wrong_sender)
+
+    message = 'come from test_one_message_wrong_sender'
+    send(caplog, runner, sender, fingerprint, message)
+
+    # retrieve
+    caplog.set_level(10)
+    runner.invoke(scmail.client, ['retrieve', '-f', fingerprint, '-s', wrong_sender, '-p', PASSWORD])
+
+    # check no message retrieve
+    assert 'Retrieve message successful. No message available.' in caplog.text
 
 
 @pytest.mark.finished
