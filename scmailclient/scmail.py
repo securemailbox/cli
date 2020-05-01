@@ -8,11 +8,7 @@ import logging
 import time
 import requests
 
-# import sys
-# sys.path.append('../')
 
-
-# from scmailclient.gpgopt import GpgOpt
 from gpgopt import GpgOpt
 
 

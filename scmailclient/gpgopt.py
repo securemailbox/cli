@@ -107,7 +107,6 @@ class GpgOpt():
         """
         msgs = []
         tag = True
-        logging.info(passphrase)
 
         if not messages:
             msgs = ['No message.']

@@ -38,3 +38,4 @@ def send(caplog, runner, sender, recipient, message):
 def retrieve(caplog, runner, sender, recipient):
     caplog.set_level(10)
     runner.invoke(scmail.client, ['retrieve', '-f', recipient, '-s', sender, '-p', PASSWORD])
+
