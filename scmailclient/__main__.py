@@ -3,4 +3,3 @@
 from scmail import main as client
 
 client()
-
