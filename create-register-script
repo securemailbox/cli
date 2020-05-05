@@ -1,0 +1,22 @@
+#!/bin/bash
+  
+file="create-key.txt"
+count="$1"
+
+if [[ -z $count ]]; then
+    count=1
+fi
+
+for ((num = 1; num <= $count; num++)); do
+    name="user$num"
+    email="user${num}@scmail.dev"
+    password=$name
+
+    echo $(pipenv run python scmail.py create-key -n $name -e $email -t RSA -l 1024 -d 2y -p $password) > $file
+
+    fingerprint=$(grep -o "'fingerprint': '[^']*" $file | grep -o "[^']*$")
+
+    pipenv run python scmail.py register -f $fingerprint
+done
+
+rm $file
