@@ -10,7 +10,7 @@ import logging
 import time
 
 # Default to localhost if url is not given
-SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "http://127.0.0.1:8080")
+SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "https://securemailbox.duckdns.org")
 
 # Logging Level
 LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.DEBUG)
@@ -135,9 +135,8 @@ def register(ctx, fingerprint):
     res = r.json()
     logging.debug(f'response is: \n{res}')
 
-    if r.status_code == 200 and res.get('success') == True:
+    if r.status_code == 201 and res.get('success'):
         logging.info('Registration success.')
-        ctx.parent.pp.pprint(res.get('data').get('mailbox'))
     else:
         logging.error(f'Registration fail.\nError {r.status_code} is: {res.get("error")}')
 
@@ -207,17 +206,19 @@ def send(ctx, sender_fingerprint, recipient, message):
     ok, encrypted_message = ctx.parent.gpg.encrypt_message(message, recipient)
     if ok is False:
         logging.error(f'Message encrypt fail.\n{encrypted_message}')
+        return
     else:
         logging.info('Message encrypt success.')
 
     # Send
     payload = {'fingerprint': recipient, 'message': encrypted_message.decode(), 'sender_fingerprint': sender_fingerprint}
     r = requests.post(SECUREMAILBOX_URL + '/send/', json=payload)
+    res = r.json()
 
-    if r.status_code == 200:
+    if r.status_code == 201 and res.get("success"):
         logging.info('Sending message success.')
     else:
-        logging.error(f'Sending message fail.\nError {r.status_code} is: {r.json().get("error")}')
+        logging.error(f'Sending message fail.\nError {r.status_code} is: {res.get("error")}')
 
 
 @click.command()
