@@ -8,7 +8,6 @@
 !Pipfile.lock
 !README.md
 !.gitignore
-!requirements.txt
 
 # Program files
 !tests
@@ -17,3 +16,8 @@
 !scmailclient
 !scmailclient/*.py
 
+!.travis.yml
+
+# Testing files
+!test_app.py
+!hello.py
