@@ -11,5 +11,5 @@ recipientFingerprint="E0BE5FDEAD10DBC2B0A5A43345E797DBEBBBEF75"
 
 for ((num = 1; num <= $count; num++)); do
     message="scriptMessage$num"
-    pipenv run python scmail.py send -s $senderFingerprint -r $recipientFingerprint -m $message
+    pipenv run python ../scmail.py send -s $senderFingerprint -r $recipientFingerprint -m $message
 done

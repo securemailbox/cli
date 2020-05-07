@@ -1,6 +1,6 @@
 #!/bin/bash
 
-fileName="script-key-info.txt"
+file="script-key-info.txt"
 fingerprint="E0BE5FDEAD10DBC2B0A5A43345E797DBEBBBEF75"
 
 echo "-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -34,6 +34,8 @@ deoAA/9OlfZ7NDZC2cEiogTcseqMx39pwdbky7bgjD8tFBYokOF5Uc5c4+ORAlm8
 ejuYMFbFD5kYVcTlMJWDbqpP1zu8cVDrCw/d1RtiE9jJwssloKwOJcME3o1f772n
 dQ/GHHheupov/3FEtj6BiTC4hOfEIzlqHPw5JyY74xKhtmFg6Q==
 =Lg1D
------END PGP PRIVATE KEY BLOCK-----" > $fileName
+-----END PGP PRIVATE KEY BLOCK-----" > $file
 
-pipenv run python scmail.py import-key -p $fileName -f $fingerprint
+pipenv run python ../scmail.py import-key -p $file -f $fingerprint
+
+rm $file

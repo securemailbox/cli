@@ -1,0 +1,37 @@
+#!/bin/bash
+  
+file="create-key.txt"
+count="$1"
+
+if [[ -z $count ]]; then
+    count=1
+fi
+
+pipenv run python ../scmail.py list-keys -p
+
+for ((num = 1; num <= $count; num++)); do
+    name1="alice$num"
+    email1="alice${num}@scmail.dev"
+    password1=$name1
+    name2="bob$num"
+    email2="bob${num}@scmail.dev"
+    password2=$name2
+
+    echo $(pipenv run python ../scmail.py create-key -n $name1 -e $email1 -t RSA -l 1024 -d 2y -p $password1) > $file
+    fingerprint1=$(grep -o "'fingerprint': '[^']*" $file | grep -o "[^']*$")
+    echo $(pipenv run python ../scmail.py create-key -n $name2 -e $email2 -t RSA -l 1024 -d 2y -p $password2) > $file
+    fingerprint2=$(grep -o "'fingerprint': '[^']*" $file | grep -o "[^']*$")
+
+    pipenv run python ../scmail.py register -f $fingerprint1
+    pipenv run python ../scmail.py register -f $fingerprint2
+
+    message1="message-from-$name1"
+    message2="message-from-$name2"
+    pipenv run python ../scmail.py send -s $fingerprint1 -r $fingerprint2 -m $message1
+    pipenv run python ../scmail.py send -s $fingerprint2 -r $fingerprint1 -m $message2
+
+    pipenv run python ../scmail.py retrieve -f $fingerprint1 -s $fingerprint2 -p $password1
+    pipenv run python ../scmail.py retrieve -f $fingerprint2 -s $fingerprint1 -p $password2
+done
+
+rm $file
