@@ -13,7 +13,8 @@ import time
 SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "http://127.0.0.1:8080")
 
 # Logging Level
-LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.DEBUG)
+LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.INFO)
+
 
 @click.group()
 @click.pass_context

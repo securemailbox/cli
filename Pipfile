@@ -9,6 +9,7 @@ verify_ssl = true
 python-gnupg = "*"
 click = "*"
 requests = "*"
+gpg = "*"
 
 [requires]
 python_version = "3.8"

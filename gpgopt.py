@@ -25,7 +25,6 @@ class GpgOpt():
         self.gpg = gnupg.GPG(gnupghome=mygnupghome)
         self.logger.info('Initialize GnuPG successful.')
 
-
     def import_key(self, key_data):
         """Check whether the gnupg pub or pvt key already exist.
 
