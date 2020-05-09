@@ -67,26 +67,6 @@ def test_one_message(caplog, runner):
     assert message in caplog.text
 
 
-@pytest.mark.unfinished
-def test_bad_password(caplog, runner):
-    """TODO: testing if enter wrong password."""
-    sender, recipient = create_two(caplog, runner)
-    register(caplog, runner, sender)
-    register(caplog, runner, recipient)
-
-    # begin send message.
-    message = "message from test_bad_password."
-    send(caplog, runner, sender, recipient, message)
-
-    # retrieve and passing bad password.
-    caplog.set_level(10)
-    runner.invoke(
-        scmail.client, ["retrieve", "-f", recipient, "-s", sender, "-p", "wrong"],
-    )
-    assert "gpg: public key decryption failed: Bad passphrase" in caplog.text
-    assert "Some messages decrypt fail." in caplog.text
-
-
 @pytest.mark.finished
 def test_one_message_wrong_sender(caplog, runner):
     sender, fingerprint = create_two(caplog, runner)
