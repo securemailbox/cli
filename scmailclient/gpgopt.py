@@ -1,12 +1,8 @@
 import gnupg
 from pathlib import Path
-from random import randint
 import logging
 
-# For Testing
-if __name__ == "__main__":
-    import time
-    import getpass
+from constants import TIMES, USER_NAME
 
 
 class GpgOpt:
@@ -108,7 +104,7 @@ class GpgOpt:
 
         if not messages:
             msgs = ["No message."]
-            return (True, msgs)
+            return True, msgs
 
         for message in messages:
             msg = self.gpg.decrypt(message=message, passphrase=passphrase)
@@ -117,27 +113,17 @@ class GpgOpt:
                 tag = False
             msgs.append(msg.data)
 
-        return (tag, msgs)
+        return tag, msgs
 
 
 if __name__ == "__main__":
-    mygpg = GpgOpt(mygnupghome="gnupgkeys")
-    LOG_TIME_FORMAT = time.strftime("%Y%m%d%H%M%S", time.localtime())
-
-    # LOGGING_LEVEL = logging.DEBUG
-    # logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s',
-    # level=LOGGING_LEVEL,
-    # handlers=[
-    # logging.FileHandler(filename=Path('log', LOG_TIME_FORMAT)),
-    # logging.StreamHandler()
-    # ]
-    # )
-
-    # Test import key
-    # path = 'b'
-    # res = mygpg.import_key(path=path)
-    # print(res)
-
-    # test create key
-    res = mygpg.create("1", "f", "e", "RSA", "1024", "2y")
-    print(res)
+    mykey = GpgOpt(mygnupghome="gnupgkeys")
+    logging.basicConfig(
+        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+        level=logging.DEBUG,
+        handlers=[
+            logging.FileHandler(filename=Path("log", TIMES)),
+            logging.StreamHandler(),
+        ],
+    )
+    mykey.list_keys(sec=False)

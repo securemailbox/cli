@@ -3,28 +3,25 @@ import pprint
 import re
 from pathlib import Path
 from os import environ
-import getpass
 import logging
-import time
 import requests
 
-
 from gpgopt import GpgOpt
-
+from constants import TIMES, USER_NAME
 
 # Default to localhost if url is not given
 SECUREMAILBOX_URL = environ.get(
-    "SECUREMAILBOX_URL", "http://securemailbox.duckdns.org:8082/"
+    "SECUREMAILBOX_URL", "https://securemailbox.duckdns.org/"
 )
 
 # Logging Level
 LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.DEBUG)
 
 
-def check_fingerprint(ctx, param, value):
+def check_fingerprint(ctx, param, fingerprint=""):
     # in normal case or it is optional.
-    if len(value) == 40 or not value:
-        return value
+    if len(fingerprint) == 40 or not fingerprint:
+        return fingerprint
     logging.error("The length of fingerprint is not a valid length.")
     ctx.exit(1)
 
@@ -35,16 +32,14 @@ def client(ctx):
     """Initial client."""
     # Bacis config of logging
     Path("log").mkdir(exist_ok=True)
-    times = time.strftime("%Y%m%d%H%M%S", time.localtime())
     logging.basicConfig(
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         level=LOGGING_LEVEL,
         handlers=[
-            logging.FileHandler(filename=Path("log", times)),
+            logging.FileHandler(filename=Path("log", TIMES)),
             logging.StreamHandler(),
         ],
     )
-    ctx.logger = logging.getLogger(__name__)
 
     # Set config file path.
     ctx.config = Path("scmail.conf")
@@ -58,8 +53,6 @@ def client(ctx):
             gnupghome=click.prompt("Enter your gnupg home dir:", default="gnupgkeys"),
         )
     )
-    ctx.logger.debug(f"gnupg home is {gnupghome}")
-
     ctx.gpg = GpgOpt(mygnupghome=gnupghome)
 
     # Initial pretty printer
@@ -71,14 +64,15 @@ def client(ctx):
 @click.pass_context
 def load_config(ctx):
     """Load config file."""
-    f = ctx.config.open("r").read()
+    with ctx.config.open("r") as f:
+        f = f.read()
+
     config = re.split("\n|=", f)
     logging.debug(f"read config file:{config}")
 
     for i in range(0, len(config) - 1, 2):
-        print(f"The {config[i]} is: {config[i+1]}")
+        logging.info(f"The {config[i]} is: {config[i + 1]}")
 
-    print()
     logging.info("Config file exists. Load Successful.")
     return config[1]
 
@@ -102,7 +96,7 @@ def set_user_info(ctx, gnupghome):
     "--name",
     "-n",
     prompt="Enter Name",
-    default=getpass.getuser(),
+    default=USER_NAME,
     type=str,
     help="Generator name.",
 )
@@ -110,7 +104,7 @@ def set_user_info(ctx, gnupghome):
     "--email",
     "-e",
     prompt="Enter Email",
-    default=f"{getpass.getuser()}@scmail.dev",
+    default=f"{USER_NAME}@scmail.dev",
     type=str,
     help="The user email address.",
 )
@@ -153,11 +147,13 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
     )
 
     # Warning if key never expire and user want to continue.
-    if expire_date == 0 and not click.confirm(
+    if expire_date == "0" and click.confirm(
         "0 means never expire, Do you want to continue?"
     ):
-        logging.warning("Never expire key will be created.")
+        logging.info("Not create never expire key.")
+        return
 
+    logging.warning("Never expire key will be created.")
     key = ctx.parent.gpg.create(
         password=password,
         name=name,
@@ -166,9 +162,7 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
         key_length=key_length,
         expire_date=expire_date,
     )
-    ctx.parent.pp.pprint(key.__dict__)
     logging.info(f"Key Creation finished.\nFingerprint is {key.fingerprint}.")
-    return key.fingerprint
 
 
 @click.command(name="list")
@@ -215,7 +209,7 @@ def register(ctx, fingerprint):
     res = r.json()
     logging.debug(f"response is: \n{res}")
 
-    if r.status_code == 200 and res.get("success") == True:
+    if r.status_code == 200 and res.get("success") is True:
         logging.info("Registration success.")
         ctx.parent.pp.pprint(res.get("data").get("mailbox"))
     else:
@@ -338,6 +332,7 @@ def send(ctx, sender_fingerprint, recipient, message):
     ok, encrypted_message = ctx.parent.gpg.encrypt_message(message, recipient)
     if ok is False:
         logging.error(f"Message encrypt fail.\n{encrypted_message}")
+        return
     else:
         logging.info("Message encrypt success.")
 
@@ -449,7 +444,7 @@ def import_key(ctx, file_path, fingerprint):
     # scaning key
     res = ctx.parent.gpg.scan_file(file_path)
 
-    if res == []:
+    if not res:
         logging.error(
             "The file path is wrong. File not found. Or No key (pair) in this file."
         )
@@ -484,10 +479,5 @@ client.add_command(retrieve)
 client.add_command(export_key)
 client.add_command(import_key)
 
-
-def main():
-    client(prog_name="scmail")
-
-
 if __name__ == "__main__":
-    main()
+    client(prog_name="scmail")

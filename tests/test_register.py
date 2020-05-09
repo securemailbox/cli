@@ -1,7 +1,6 @@
 import pytest
 from helper import scmail, create_key
 
-
 """
 Three test cases.
 - fingerprint exists
@@ -29,7 +28,7 @@ def test_fingerprint_length(caplog, runner, fingerprint):
 
 @pytest.mark.finished
 def test_fingerprint_exists(caplog, runner):
-    fingerprint = create_key(runner)
+    fingerprint = create_key(caplog, runner)
     # register first time
     runner.invoke(scmail.client, ["register", "-f", fingerprint])
     # assert 'Registration success.' in caplog.text

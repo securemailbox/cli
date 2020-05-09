@@ -1,7 +1,6 @@
 from helper import scmail, register, create_key, send, PASSWORD, retrieve
 import pytest
 
-
 """
 This is an aggregation test about multiple people using API.
 """
@@ -12,8 +11,8 @@ def test_two_people(caplog, runner):
     # create and register.
     alice_p = "alice"
     bob_p = "bob"
-    alice_finger = create_key(runner, password=alice_p)
-    bob_finger = create_key(runner, password=bob_p)
+    alice_finger = create_key(caplog, runner, password=alice_p)
+    bob_finger = create_key(caplog, runner, password=bob_p)
     register(caplog, runner, alice_finger)
     register(caplog, runner, bob_finger)
 

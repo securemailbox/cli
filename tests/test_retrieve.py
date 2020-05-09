@@ -1,7 +1,6 @@
 import pytest
 from helper import create_two, register, PASSWORD, send, scmail, create_key
 
-
 """
 Handle cases of retrieve:
 
@@ -17,7 +16,7 @@ Handle cases of retrieve:
 
 @pytest.mark.finished
 def test_no_sender(caplog, runner):
-    fingerprint, sender = create_two(runner)
+    sender, fingerprint = create_two(caplog, runner)
     register(caplog, runner, fingerprint)
     register(caplog, runner, sender)
 
@@ -35,7 +34,7 @@ def test_no_sender(caplog, runner):
 
 @pytest.mark.finished
 def test_no_message(caplog, runner):
-    fingerprint, sender = create_two(runner)
+    sender, fingerprint = create_two(caplog, runner)
     register(caplog, runner, fingerprint)
     register(caplog, runner, sender)
 
@@ -50,7 +49,7 @@ def test_no_message(caplog, runner):
 
 @pytest.mark.finished
 def test_one_message(caplog, runner):
-    fingerprint, sender = create_two(runner)
+    sender, fingerprint = create_two(caplog, runner)
     register(caplog, runner, fingerprint)
     register(caplog, runner, sender)
 
@@ -68,10 +67,30 @@ def test_one_message(caplog, runner):
     assert message in caplog.text
 
 
+@pytest.mark.unfinished
+def test_bad_password(caplog, runner):
+    """TODO: testing if enter wrong password."""
+    sender, recipient = create_two(caplog, runner)
+    register(caplog, runner, sender)
+    register(caplog, runner, recipient)
+
+    # begin send message.
+    message = "message from test_bad_password."
+    send(caplog, runner, sender, recipient, message)
+
+    # retrieve and passing bad password.
+    caplog.set_level(10)
+    runner.invoke(
+        scmail.client, ["retrieve", "-f", recipient, "-s", sender, "-p", "wrong"],
+    )
+    assert "gpg: public key decryption failed: Bad passphrase" in caplog.text
+    assert "Some messages decrypt fail." in caplog.text
+
+
 @pytest.mark.finished
 def test_one_message_wrong_sender(caplog, runner):
-    fingerprint, sender = create_two(runner)
-    wrong_sender = create_key(runner)
+    sender, fingerprint = create_two(caplog, runner)
+    wrong_sender = create_key(caplog, runner)
 
     # register three
     register(caplog, runner, fingerprint)
@@ -94,7 +113,7 @@ def test_one_message_wrong_sender(caplog, runner):
 
 @pytest.mark.finished
 def test_multiple_messages(caplog, runner):
-    fingerprint, sender = create_two(runner)
+    sender, fingerprint = create_two(caplog, runner)
     register(caplog, runner, fingerprint)
     register(caplog, runner, sender)
 

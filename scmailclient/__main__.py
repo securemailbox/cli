@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
-from scmail import main as client
+from scmail import client
 
-client()
+client(prog_name="scmail")
