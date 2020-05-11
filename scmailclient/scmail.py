@@ -148,9 +148,7 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
 
     # Warning if key never expire and user want to continue.
     if expire_date == "0":
-        if click.confirm(
-        "0 means never expire, Do you want to continue?"
-    ):
+        if click.confirm("0 means never expire, Do you want to continue?"):
             logging.warning("Never expire key will be created.")
         else:
             logging.info("Not create never expire key.")
@@ -231,7 +229,7 @@ def register(ctx, fingerprint):
 
     if r.status_code == 200 and res.get("success") is True:
         logging.info("Registration success.")
-        click.secho('Fingerprint is: ' + res.get('data').get('mailbox'))
+        click.secho("Fingerprint is: " + res.get("data").get("mailbox"))
     else:
         logging.error(
             f'Registration fail.\nError {r.status_code} is: {res.get("error")}'

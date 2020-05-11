@@ -37,7 +37,7 @@ pipenv install
 ### Create key
 
 ```bash
-pipenv run python scmail.py create-key
+pipenv run python scmailclient create
 ```
 
 options:
@@ -70,12 +70,12 @@ Fingerprint is A4229AFA03431561A7E0B7892312B160D4E4C715.
 ### Register
 
 ```bash
-pipenv run python scmail.py register
+pipenv run python scmailclient register
 ```
 
 options:
 
-- fingerprint: user's fingerprint
+- fingerprint(`-f`): user's fingerprint
 
 ```
 # result
@@ -92,14 +92,14 @@ Fingerprint is: A4229AFA03431561A7E0B7892312B160D4E4C715
 ### Retrieve
 
 ```bash
-pipenv run python scmail.py retrieve
+pipenv run python scmailclient retrieve
 ```
 
 options:
 
-- fingerprint: user's fingerprint.
-- sender_fingerprint: optional, sender's fingerprint.
-- password: the password of private key.
+- fingerprint(`-f`): user's fingerprint.
+- sender-fingerprint(`-s`): optional, sender's fingerprint.
+- password(`-p`): the password of private key.
 
 ```
 # result
@@ -119,13 +119,14 @@ Sending message example!
 ### Send
 
 ```bash
-pipenv run python scmail.py send
+pipenv run python scmailclient send
 ```
 
 options:
 
-- recipient: the fingerprint of recipient.
-- message: the message should be sent.
+- sender-fingerprint(`-s`): the fingerprint of sender.
+- recipient(`-r`): The fingerprint of recipient.
+- message(`-m`): the message should be sent.
 
 ```
 # result
@@ -143,12 +144,53 @@ The message: Sending message example!
 ### List key
 
 ```bash
-pipenv run python scmail.py list-keys
+pipenv run python scmailclient list
 ```
 
 options:
 
-- show_private: whether the output are private keys.
+- private(`-p`): whether the output are private keys.
+
+```
+# result
+2020-05-11 13:39:04,704 root INFO The gnupghome is: gnupgkeys
+2020-05-11 13:39:04,705 root INFO Config file exists. Load Successful.
+2020-05-11 13:39:04,709 gpgopt INFO Initialize GnuPG successful.
+2020-05-11 13:39:04,710 root INFO Initialize client successful.
+Do you want to show the private keys? [y/N]: y
+2020-05-11 13:39:06,662 root INFO 3 private keys exist.
+Current key is:
+
+        Key ID:         90016092EB8B1804
+        Fingerprint:    B1C9FFC5546D41F3E25B66EE90016092EB8B1804
+        Length:         4096
+        Trust Level:    u
+        User Info:      Mike <mike@outlook.com>
+
+Print all keys:
+
+        Key ID:         27DF7944E90696FF
+        Fingerprint:    8EB7CD394313135528D9182727DF7944E90696FF
+        Length:         1024
+        Trust Level:    u
+        User Info:      dgu <dgu@scmail.dev>
+
+
+        Key ID:         F9F076A576818B02
+        Fingerprint:    5A814B6F491F094F41A70A95F9F076A576818B02
+        Length:         2048
+        Trust Level:    u
+        User Info:      John <john@gmail.com>
+
+
+        Key ID:         90016092EB8B1804
+        Fingerprint:    B1C9FFC5546D41F3E25B66EE90016092EB8B1804
+        Length:         4096
+        Trust Level:    u
+        User Info:      Mike <mike@outlook.com>
+
+2020-05-11 13:39:06,663 root INFO List keys finished.
+```
 
 ### Help
 
