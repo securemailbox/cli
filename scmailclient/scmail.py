@@ -15,7 +15,7 @@ SECUREMAILBOX_URL = environ.get(
 )
 
 # Logging Level
-LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.DEBUG)
+LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.INFO)
 
 
 def check_fingerprint(ctx, param, fingerprint=""):
@@ -147,13 +147,15 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
     )
 
     # Warning if key never expire and user want to continue.
-    if expire_date == "0" and click.confirm(
+    if expire_date == "0":
+        if click.confirm(
         "0 means never expire, Do you want to continue?"
     ):
-        logging.info("Not create never expire key.")
-        return
+            logging.warning("Never expire key will be created.")
+        else:
+            logging.info("Not create never expire key.")
+            return
 
-    logging.warning("Never expire key will be created.")
     key = ctx.parent.gpg.create(
         password=password,
         name=name,
@@ -229,7 +231,7 @@ def register(ctx, fingerprint):
 
     if r.status_code == 200 and res.get("success") is True:
         logging.info("Registration success.")
-        ctx.parent.pp.pprint(res.get("data").get("mailbox"))
+        click.secho('Fingerprint is: ' + res.get('data').get('mailbox'))
     else:
         logging.error(
             f'Registration fail.\nError {r.status_code} is: {res.get("error")}'
@@ -302,8 +304,9 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
     )
     logging.debug(messages)
 
-    # Print all message.
-    ctx.parent.pp.pprint(messages)
+    # Decode and Print all message.
+    for m in messages:
+        click.secho(m.decode("utf-8"))
 
     if ok is False:
         logging.error(f"Some messages decrypt fail.")
