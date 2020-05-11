@@ -165,6 +165,16 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
     logging.info(f"Key Creation finished.\nFingerprint is {key.fingerprint}.")
 
 
+def print_key(key):
+    click.secho(
+        f"\n\tKey ID:\t\t{key.get('keyid')}\n"
+        + f"\tFingerprint:\t{key.get('fingerprint')}\n"
+        + f"\tLength:\t\t{key.get('length')}\n"
+        + f"\tTrust Level:\t{key.get('trust')}\n"
+        + f"\tUser Info:\t{key.get('uids')[0]}\n"
+    )
+
+
 @click.command(name="list")
 @click.option(
     "--private",
@@ -179,10 +189,18 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
 def list_keys(ctx, private):
     """List and print all the keys in the gnupg home dir."""
     keys = ctx.parent.gpg.list_keys(private)
-    key_type = "public" if private is False else "private"
 
-    logging.info(f"{len(keys)} {key_type} keys exist.")
-    ctx.parent.pp.pprint(keys.__dict__)
+    length = len(keys)
+    logging.info(f"{length} {'public' if private is False else 'private'} keys exist.")
+    if not length:
+        ctx.exit(1)
+
+    click.secho("Current key is:")
+    print_key(keys.curkey)
+    click.secho("Print all keys:")
+    for key, value in keys.key_map.items():
+        print_key(value)
+
     logging.info("List keys finished.")
 
 
