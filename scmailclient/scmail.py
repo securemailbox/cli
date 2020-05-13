@@ -11,7 +11,7 @@ from constants import TIMES, USER_NAME
 
 # Default to localhost if url is not given
 SECUREMAILBOX_URL = environ.get(
-    "SECUREMAILBOX_URL", "https://securemailbox.duckdns.org/"
+    "SECUREMAILBOX_URL", "http://localhost:8082/"
 )
 
 # Logging Level
