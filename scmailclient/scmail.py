@@ -217,6 +217,7 @@ def register(ctx, fingerprint):
 
     if r.status_code == 201 and res.get("success"):
         logging.info("Registration success.")
+        click.secho(fingerprint)
     else:
         logging.error(
             f'Registration fail.\nError {r.status_code} is: {res.get("error")}'
