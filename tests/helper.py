@@ -9,7 +9,7 @@ PASSWORD = "scmail_testing"
 
 def create_key(caplog, runner, password=PASSWORD):
     caplog.set_level(10)
-    runner.invoke(scmail.client, ["create", "-p", password])
+    runner.invoke(scmail.client, ["create-key", "-p", password])
     f = re.findall(r"Fingerprint is ([0-9A-Z]+).", caplog.text, re.S)
     caplog.clear()
     return f[0]

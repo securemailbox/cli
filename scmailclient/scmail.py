@@ -10,9 +10,7 @@ from gpgopt import GpgOpt
 from constants import TIMES, USER_NAME
 
 # Default to localhost if url is not given
-SECUREMAILBOX_URL = environ.get(
-    "SECUREMAILBOX_URL", "http://localhost:8082/"
-)
+SECUREMAILBOX_URL = environ.get("SECUREMAILBOX_URL", "http://localhost:8082/")
 
 # Logging Level
 LOGGING_LEVEL = environ.get("LOGGING_LEVEL", logging.INFO)
@@ -91,7 +89,7 @@ def set_user_info(ctx, gnupghome):
     return gnupghome
 
 
-@click.command(name="create")
+@click.command(name="create-key")
 @click.option(
     "--name",
     "-n",
@@ -148,9 +146,7 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
 
     # Warning if key never expire and user want to continue.
     if expire_date == "0":
-        if click.confirm(
-        "0 means never expire, Do you want to continue?"
-    ):
+        if click.confirm("0 means never expire, Do you want to continue?"):
             logging.warning("Never expire key will be created.")
         else:
             logging.info("Not create never expire key.")
@@ -167,17 +163,7 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
     logging.info(f"Key Creation finished.\nFingerprint is {key.fingerprint}.")
 
 
-def print_key(key):
-    click.secho(
-        f"\n\tKey ID:\t\t{key.get('keyid')}\n"
-        + f"\tFingerprint:\t{key.get('fingerprint')}\n"
-        + f"\tLength:\t\t{key.get('length')}\n"
-        + f"\tTrust Level:\t{key.get('trust')}\n"
-        + f"\tUser Info:\t{key.get('uids')[0]}\n"
-    )
-
-
-@click.command(name="list")
+@click.command(name="list-keys")
 @click.option(
     "--private",
     "-p",
@@ -198,10 +184,10 @@ def list_keys(ctx, private):
         ctx.exit(1)
 
     click.secho("Current key is:")
-    print_key(keys.curkey)
-    click.secho("Print all keys:")
+    click.secho(keys.curkey.get("fingerprint"))
+    click.secho("All keys are:")
     for key, value in keys.key_map.items():
-        print_key(value)
+        click.secho(value.get("fingerprint"))
 
     logging.info("List keys finished.")
 
@@ -231,7 +217,7 @@ def register(ctx, fingerprint):
 
     if r.status_code == 200 and res.get("success") is True:
         logging.info("Registration success.")
-        click.secho('Fingerprint is: ' + res.get('data').get('mailbox'))
+        click.secho(res.get("data").get("mailbox"))
     else:
         logging.error(
             f'Registration fail.\nError {r.status_code} is: {res.get("error")}'
@@ -373,7 +359,7 @@ def send(ctx, sender_fingerprint, recipient, message):
         )
 
 
-@click.command(name="export")
+@click.command(name="export-key")
 @click.option(
     "--fingerprint",
     prompt="Enter the fingerprint of that key",
@@ -442,7 +428,7 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
     logging.info("Export key successful.")
 
 
-@click.command(name="import")
+@click.command(name="import-key")
 @click.option(
     "--file-path",
     "-p",

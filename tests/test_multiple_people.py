@@ -36,7 +36,3 @@ def test_two_people(caplog, runner):
     assert bob_message in caplog.text
     caplog.clear()
 
-
-@pytest.mark.unfinished
-def test_five_people(caplog, runner):
-    pass
