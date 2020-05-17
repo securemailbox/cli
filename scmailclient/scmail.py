@@ -215,9 +215,8 @@ def register(ctx, fingerprint):
     res = r.json()
     logging.debug(f"response is: \n{res}")
 
-    if r.status_code == 200 and res.get("success") is True:
+    if r.status_code == 201 and res.get("success"):
         logging.info("Registration success.")
-        click.secho(res.get("data").get("mailbox"))
     else:
         logging.error(
             f'Registration fail.\nError {r.status_code} is: {res.get("error")}'
@@ -350,12 +349,13 @@ def send(ctx, sender_fingerprint, recipient, message):
         "sender_fingerprint": sender_fingerprint,
     }
     r = requests.post(SECUREMAILBOX_URL + "/send/", json=payload)
+    res = r.json()
 
-    if r.status_code == 200:
+    if r.status_code == 201 and res.get("success"):
         logging.info("Sending message success.")
     else:
         logging.error(
-            f'Sending message fail.\nError {r.status_code} is: {r.json().get("error")}'
+            f'Sending message fail.\nError {r.status_code} is: {res.get("error")}'
         )
 
 
