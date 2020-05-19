@@ -1,14 +1,11 @@
 import gnupg
 from pathlib import Path
-from random import randint
 import logging
 
-# For Testing
-import time
-import getpass
+from constants import TIMES, USER_NAME
 
 
-class GpgOpt():
+class GpgOpt:
     """Initial gnupg, create, import, and export key pairs.
 
     create, import, and export key pairs.
@@ -20,11 +17,10 @@ class GpgOpt():
         """
         Path(mygnupghome).mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(__name__)
-        self.logger.debug('Home Dir of GnuPG exists.')
+        self.logger.debug("Home Dir of GnuPG exists.")
 
         self.gpg = gnupg.GPG(gnupghome=mygnupghome)
-        self.logger.info('Initialize GnuPG successful.')
-
+        self.logger.info("Initialize GnuPG successful.")
 
     def import_key(self, key_data):
         """Check whether the gnupg pub or pvt key already exist.
@@ -32,8 +28,11 @@ class GpgOpt():
         If exist, import it, if not, return false.
         """
         result = self.gpg.import_keys(key_data=key_data)
-        return {'success': result.results, 'imported': result.imported, 'counts': result.counts}
-
+        return {
+            "success": result.results,
+            "imported": result.imported,
+            "counts": result.counts,
+        }
 
     def create(self, password, name, email, key_type, key_length, expire_date):
         """Create a new key pair. need parameters:
@@ -59,11 +58,11 @@ class GpgOpt():
             key_type=key_type,
             passphrase=password,
             key_length=key_length,
-            expire_date=expire_date)
+            expire_date=expire_date,
+        )
 
         # generate key pair
         return self.gpg.gen_key(input_data)
-
 
     def export_key(self, fingerprint, export_pvt=False, password=None):
         """Export key pair from the gnupg."""
@@ -75,16 +74,13 @@ class GpgOpt():
 
         return sc_pub, sc_pvt
 
-
     def list_keys(self, sec=False):
         """Get pub or pvt keys and return them."""
         return self.gpg.list_keys(secret=sec)
 
-
     def scan_file(self, file_path):
         """Scan the keys in a file."""
         return self.gpg.scan_keys(file_path)
-
 
     def encrypt_message(self, message, recipient):
         """Encrypt the message and return the encrypted message.
@@ -95,7 +91,6 @@ class GpgOpt():
         """
         msg = self.gpg.encrypt(message, recipient, always_trust=True)
         return (True, msg.data) if msg.ok else (False, msg.stderr)
-
 
     def decrypt_message(self, messages, passphrase):
         """Decrypt the message and return the original message.
@@ -108,8 +103,8 @@ class GpgOpt():
         tag = True
 
         if not messages:
-            msgs = ['No message.']
-            return (True, msgs)
+            msgs = ["No message."]
+            return True, msgs
 
         for message in messages:
             msg = self.gpg.decrypt(message=message, passphrase=passphrase)
@@ -118,21 +113,17 @@ class GpgOpt():
                 tag = False
             msgs.append(msg.data)
 
-        return (tag, msgs)
+        return tag, msgs
 
 
 if __name__ == "__main__":
-    mygpg = GpgOpt(mygnupghome='gnupgkeys')
-    LOG_TIME_FORMAT = time.strftime("%Y%m%d%H%M%S",time.localtime())
-    LOGGING_LEVEL = logging.DEBUG
-    logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        level=LOGGING_LEVEL,
+    mykey = GpgOpt(mygnupghome="gnupgkeys")
+    logging.basicConfig(
+        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+        level=logging.DEBUG,
         handlers=[
-            logging.FileHandler(filename=Path('log', LOG_TIME_FORMAT)),
-            logging.StreamHandler()
-        ]
+            logging.FileHandler(filename=Path("log", TIMES)),
+            logging.StreamHandler(),
+        ],
     )
-    # Test import key
-    path = 'b'
-    res = mygpg.import_key(path=path)
-    print(res)
+    mykey.list_keys(sec=False)

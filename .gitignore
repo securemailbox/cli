@@ -8,13 +8,15 @@
 !Pipfile.lock
 !README.md
 !.gitignore
-!.travis.yml
 
 # Program files
-!gpgopt.py
-!scmail.py
-!app.py
-!cli.py
+!tests
+!tests/*.py
+!tests/pytest.ini
+!scmailclient
+!scmailclient/*.py
+
+!.travis.yml
 
 # Testing files
 !test_app.py
