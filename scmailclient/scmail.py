@@ -130,15 +130,8 @@ def set_user_info(ctx, gnupghome):
     type=str,
     help="The expire time of the key pair. 0 or empty for never expire.",
 )
-@click.password_option(
-    "--password",
-    "-p",
-    prompt="Enter private key password",
-    type=str,
-    help="Password of private key.",
-)
 @click.pass_context
-def create_key(ctx, name, email, key_type, key_length, expire_date, password):
+def create_key(ctx, name, email, key_type, key_length, expire_date):
     """Create gnupg key pairs."""
     logging.debug(
         f"Information about key:\nName: {name}\nEmail: {email}\nkey type: {key_type}\nkey length: {key_length}\nexpire date: {expire_date}\n"
@@ -153,7 +146,6 @@ def create_key(ctx, name, email, key_type, key_length, expire_date, password):
             return
 
     key = ctx.parent.gpg.create(
-        password=password,
         name=name,
         email=email,
         key_type=key_type,
@@ -244,9 +236,12 @@ def register(ctx, fingerprint):
     type=str,
     help="The senders fingerprint.",
 )
-@click.password_option(
+@click.option(
     "--password",
     "-p",
+    type=str,
+    default="None",
+    hide_input=True,
     prompt="Enter password of private key",
     help="The passphrase of private key",
 )
@@ -286,7 +281,7 @@ def retrieve(ctx, fingerprint, sender_fingerprint, password):
 
     # Decrypt the messages.
     ok, messages = ctx.parent.gpg.decrypt_message(
-        messages=all_messages, passphrase=password
+        messages=all_messages, passphrase=password,
     )
     logging.debug(messages)
 
@@ -404,7 +399,9 @@ def export_key(ctx, fingerprint, is_file, is_pvt):
             pass
 
     if is_pvt is True:
-        passphrase = click.prompt("Enter pvt's passphrase", hide_input=True, type=str)
+        passphrase = click.prompt(
+            "Enter pvt's passphrase", hide_input=True, type=str, default="None"
+        )
 
     pub, pvt = ctx.parent.gpg.export_key(
         fingerprint, export_pvt=is_pvt, password=passphrase

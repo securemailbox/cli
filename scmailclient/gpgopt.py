@@ -34,12 +34,10 @@ class GpgOpt:
             "counts": result.counts,
         }
 
-    def create(self, password, name, email, key_type, key_length, expire_date):
+    def create(self, name, email, key_type, key_length, expire_date):
         """Create a new key pair. need parameters:
 
         Keyword arguments:
-
-        password: required. the password of your pvt key.
 
         name: optional, the name of user.
 
@@ -56,7 +54,7 @@ class GpgOpt:
             name_real=name,
             name_email=email,
             key_type=key_type,
-            passphrase=password,
+            passphrase=None,
             key_length=key_length,
             expire_date=expire_date,
         )
