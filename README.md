@@ -2,6 +2,8 @@
 
 A command line client for interacting a secure mailbox
 
+[![Build Status](https://www.travis-ci.org/securemailbox/cli.svg?branch=develop)](https://www.travis-ci.org/securemailbox/cli)
+
 ## Requirements
 
 - [click](https://click.palletsprojects.com/en/7.x/)
