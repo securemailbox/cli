@@ -236,12 +236,11 @@ def register(ctx, fingerprint):
     type=str,
     help="The senders fingerprint.",
 )
-@click.option(
+@click.password_option(
     "--password",
     "-p",
     type=str,
     default="None",
-    hide_input=True,
     prompt="Enter password of private key",
     help="The passphrase of private key",
 )
