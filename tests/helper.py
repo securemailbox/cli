@@ -4,12 +4,10 @@ sys.path.append("scmailclient/")
 import scmail
 import re
 
-PASSWORD = "scmail_testing"
 
-
-def create_key(caplog, runner, password=PASSWORD):
+def create_key(caplog, runner):
     caplog.set_level(10)
-    runner.invoke(scmail.client, ["create-key", "-p", password])
+    runner.invoke(scmail.client, ["create-key"])
     f = re.findall(r"Fingerprint is ([0-9A-Z]+).", caplog.text, re.S)
     caplog.clear()
     return f[0]
@@ -37,8 +35,6 @@ def send(caplog, runner, sender, recipient, message):
     caplog.clear()
 
 
-def retrieve(caplog, runner, sender, recipient, password=PASSWORD):
+def retrieve(caplog, runner, sender, recipient):
     caplog.set_level(10)
-    runner.invoke(
-        scmail.client, ["retrieve", "-f", recipient, "-s", sender, "-p", password]
-    )
+    runner.invoke(scmail.client, ["retrieve", "-f", recipient, "-s", sender])

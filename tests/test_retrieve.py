@@ -1,5 +1,5 @@
 import pytest
-from helper import create_two, register, PASSWORD, send, scmail, create_key
+from helper import create_two, register, send, scmail, create_key
 
 """
 Handle cases of retrieve:
@@ -26,7 +26,7 @@ def test_no_sender(caplog, runner):
 
     # retrieve messages
     caplog.set_level(10)
-    runner.invoke(scmail.client, ["retrieve", "-f", fingerprint, "-p", PASSWORD])
+    runner.invoke(scmail.client, ["retrieve", "-f", fingerprint])
 
     assert " message successful." in caplog.text
     assert message in caplog.text
@@ -40,9 +40,7 @@ def test_no_message(caplog, runner):
 
     # retrieve
     caplog.set_level(10)
-    runner.invoke(
-        scmail.client, ["retrieve", "-f", fingerprint, "-s", sender, "-p", PASSWORD]
-    )
+    runner.invoke(scmail.client, ["retrieve", "-f", fingerprint, "-s", sender])
 
     assert "Retrieve message successful. No message available." in caplog.text
 
@@ -59,9 +57,7 @@ def test_one_message(caplog, runner):
 
     # retrieve
     caplog.set_level(10)
-    runner.invoke(
-        scmail.client, ["retrieve", "-f", fingerprint, "-s", sender, "-p", PASSWORD]
-    )
+    runner.invoke(scmail.client, ["retrieve", "-f", fingerprint, "-s", sender])
 
     assert "Decrypt 1 message successful." in caplog.text
     assert message in caplog.text
@@ -83,8 +79,7 @@ def test_one_message_wrong_sender(caplog, runner):
     # retrieve
     caplog.set_level(10)
     runner.invoke(
-        scmail.client,
-        ["retrieve", "-f", fingerprint, "-s", wrong_sender, "-p", PASSWORD],
+        scmail.client, ["retrieve", "-f", fingerprint, "-s", wrong_sender],
     )
 
     # check no message retrieve
@@ -104,9 +99,7 @@ def test_multiple_messages(caplog, runner):
 
     # retrieve
     caplog.set_level(10)
-    runner.invoke(
-        scmail.client, ["retrieve", "-f", fingerprint, "-s", sender, "-p", PASSWORD]
-    )
+    runner.invoke(scmail.client, ["retrieve", "-f", fingerprint, "-s", sender])
 
     assert f"Decrypt {len(messages)} message successful." in caplog.text
     for message in messages:
