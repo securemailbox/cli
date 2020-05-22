@@ -20,11 +20,7 @@ class GpgOpt:
         self.logger.debug("Home Dir of GnuPG exists.")
 
         self.gpg = gnupg.GPG(gnupghome=mygnupghome)
-<<<<<<< HEAD:gpgopt.py
-        self.logger.info('Initialize GnuPG successful.')
-=======
         self.logger.info("Initialize GnuPG successful.")
->>>>>>> origin/develop:scmailclient/gpgopt.py
 
     def import_key(self, key_data):
         """Check whether the gnupg pub or pvt key already exist.
