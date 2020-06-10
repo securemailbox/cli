@@ -4,6 +4,8 @@ A command line client for interacting a secure mailbox
 
 [![Build Status](https://www.travis-ci.org/securemailbox/cli.svg?branch=develop)](https://www.travis-ci.org/securemailbox/cli)
 
+[![codecov](https://codecov.io/gh/securemailbox/cli/branch/develop/graph/badge.svg)](https://codecov.io/gh/securemailbox/cli)
+
 ## Requirements
 
 - [python 3](https://www.python.org/downloads/)
