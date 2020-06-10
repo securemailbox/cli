@@ -8,6 +8,7 @@ A command line client for interacting a secure mailbox
 
 ## Requirements
 
+- [GPG](https://gnupg.org/)
 - [python 3](https://www.python.org/downloads/)
 - [poetry](https://python-poetry.org/)
 
@@ -74,7 +75,6 @@ options:
 - key_type
 - key_length
 - expire_date
-- password
 
 ### Register
 
@@ -84,7 +84,7 @@ poetry run python scmailclient register
 
 options:
 
-- fingerprint: user's fingerprint
+- fingerprint(`-f`): user's fingerprint
 
 ### Retrieve
 
@@ -94,9 +94,9 @@ poetry run python scmailclient retrieve
 
 options:
 
-- fingerprint: user's fingerprint.
-- sender_fingerprint: optional, sender's fingerprint.
-- password: the password of private key.
+- fingerprint(`-f`): user's fingerprint.
+- sender_fingerprint(`-s`): optional, sender's fingerprint.
+- password(`-p`): optional, the password of private key.
 
 ### Send
 
@@ -106,18 +106,42 @@ poetry run python scmailclient send
 
 options:
 
-- recipient: the fingerprint of recipient.
-- message: the message should be sent.
+- sender_fingerprint(`-s`): the fingerprint of sender.
+- recipient(`-r`): the fingerprint of recipient.
+- message(`-m`): the message should be sent.
 
 ### List key
 
 ```bash
-poetry run python scmailclient list_keys
+poetry run python scmailclient list-keys
 ```
 
 options:
 
-- show_private: whether the output are private keys.
+- private(`-p`): whether the output are private keys.
+
+### Export key
+
+```bash
+poetry run python scmailclient export-key
+```
+
+options:
+
+- fingerprint(`--fingerprint`): the fingerprint of exported key.
+- is_file(`--is-file`): export key to a file.
+- is_pvt(`--is-pvt`): whether export private key.
+
+### Import key
+
+```bash
+poetry run python scmailclient import-key
+```
+
+options:
+
+- file_path(`-p`): the path of import key file.
+- fingerprint(`-f`): the fingerprint of import key.
 
 ### Help
 
