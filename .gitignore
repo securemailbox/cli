@@ -1,0 +1,22 @@
+# Ignore all files
+*
+
+# License and environment files
+!LICENSE
+!Makefile
+!Pipfile
+!Pipfile.lock
+!pyproject.toml
+!poetry.lock
+!README.md
+!.gitignore
+
+# Program files
+!scmailclient
+!scmailclient/*.py
+
+# Testing files
+!.travis.yml
+!tests
+!tests/*.py
+!tests/pytest.ini

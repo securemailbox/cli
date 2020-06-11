@@ -1,12 +1,12 @@
 PYTHON3=$(shell which python3)
-obj = mygnupg.py
+obj = scmail.py
 
 # just run python for test
 runpy:
-	pipenv run python3
+	pipenv run python
 
 run: $(obj)
-	pipenv run python3 $(obj)
+	pipenv run python $(obj)
 
 clear:
-	rm -rf gnupgkeys/* jskey.asc
+	rm -rf gnupgkeys jskey.asc scmail.conf log

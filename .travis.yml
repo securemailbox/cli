@@ -1,0 +1,18 @@
+language: python
+python:
+  - "3.8"
+install:
+  - pip install --upgrade pip setuptools poetry
+  - poetry install
+script:
+  - poetry run coverage run -m pytest
+  - poetry run coverage report
+  - bash <(curl -s https://codecov.io/bash)
+deploy:
+  provider: releases
+  api_key:
+    secure: DChHGMafeABlZK4t+YHjqLeGcj09oHTdV2Z/w3Z+62JuRoN1zyGtjVQgu1nGYMpC0RYikfNaXUznCOwU7z9YAlNL/eWbtYcYzpUEVXqseuZnASaHOxuZN//NSb0Tx8UW0adP851jGG3KMMKLaoABHjlAAlbHA3Des23A/yvGYQ/3ZzOjBpm5AHVHGoA3F0C9iV2e1+AGjROEQbsU2E8ASH6oxag0daUG9eOPuyA6iTTkpBTMFjr8nvvNAhanuC0AaFSlHZ5mi4EZ1pmvwGUnQXJ54ov8g07p4sMfAuzlRC5uOSiPASSxKzRfQrGzGAi1Yjr39977GA6bS8tGyff74oJxTM3a2vuftvC2LMxuxstbyTAc5vLBgK0OR+rHrlntmHC1BgqaG5eKy92Zeciqst67m6JqGRfTwhWP4Q86lDggGzib5eQsCtk6xWbndVYFE/B7HgKEcwf5g9zk9E4ih/XDmbKHt3MdSPXfVYElJMu/KeEWkPjvb5kN6giLvtn0x6+2tE8sSVjSe8Pe5U5iVDxnWBKdQarX0m0JCYzXPXKxrrYmDO2xmx9G4hjYwlJWCqzXqGA5olUHtDa3kYMRgSXfyjrjmeDxB+ggBIxiBbjF+pAKM8IxvCjF8N8eG5ckNPDdtf18QJBbVehcC5ZSUjWJdn4MLQO7q7uirGsisVU=
+  file: ""
+  on:
+    repo: securemailbox/cli
+    branch: master
